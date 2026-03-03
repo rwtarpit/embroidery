@@ -1,6 +1,27 @@
 #include <cuda_runtime.h>
 #include <iostream>
 
+
+/*
+Naive Fused-Softmax kernel
+
+loads input matrix 3 times from global memory:
+    - to calculate max element per row for normalizing input
+    - to calculate numerator of each element : exp(x-row_max)
+    - to calculate final value of each element by division with rowsum(exp(x_i-row_max))
+
+stores data back to global memory twice:
+    - saves normalized elements after x_i = exp(x_i-row_max)
+    - saves final softmax value of matrix
+
+uses shared memory declared once to store:
+    - final row_max for each row/block
+    - final normalization factor / denominator for each row/block
+
+uses Parellel or Tree-based Reduction to find:
+    - row_max in each block
+    - row_sum for normalization factor / denominator in each block
+*/
 __global__
 void softmax(float* matrix, int m, int n){
 
