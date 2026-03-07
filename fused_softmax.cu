@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 #include <iostream>
-
+//TODO: https://siboehm.com/articles/22/CUDA-MMM
 
 /*
 Naive Fused-Softmax kernel
@@ -83,6 +83,7 @@ optimisations over the above kernel:
     - __shfl_sync
     - loop unrolling
 */
+__global__
 void three_pass_optimized_softmax(float* matrix, int m, int n){
     unsigned int row = blockIdx.x;
 
@@ -119,6 +120,8 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
 
         matrix4[row*(n/4) + col] = col_el;
     }
+    row_data[threadIdx.x] = local_sum;
+    __syncthreads();
 
     for(unsigned int s=blockDim.x/2; s>0; s>>=1){
         if(threadIdx.x < s){
@@ -130,7 +133,7 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
 
     for(unsigned int col=threadIdx.x; col<n/4; col+=blockDim.x){
         float4 col_el = matrix4[row*(n/4) + col];
-        matrix4[col] =  make_float4(
+        matrix4[row*(n/4) + col] =  make_float4(
             col_el.x /= scaling_factor,
             col_el.y /= scaling_factor,
             col_el.z /= scaling_factor,
