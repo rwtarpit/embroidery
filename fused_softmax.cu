@@ -118,7 +118,7 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
         float local_sum4 = col_el.x + col_el.y + col_el.z + col_el.w;
         local_sum += local_sum4;
 
-        matrix4[row*(n/4) + col] = col_el;
+        //matrix4[row*(n/4) + col] = col_el;
     }
     row_data[threadIdx.x] = local_sum;
     __syncthreads();
@@ -133,6 +133,11 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
 
     for(unsigned int col=threadIdx.x; col<n/4; col+=blockDim.x){
         float4 col_el = matrix4[row*(n/4) + col];
+        col_el.x = expf(col_el.x-row_max);
+        col_el.y = expf(col_el.y-row_max);
+        col_el.z = expf(col_el.z-row_max);
+        col_el.w = expf(col_el.w-row_max);
+        
         matrix4[row*(n/4) + col] =  make_float4(
             col_el.x /= scaling_factor,
             col_el.y /= scaling_factor,
