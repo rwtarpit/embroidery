@@ -80,7 +80,6 @@ void three_pass_naive_softmax(float* matrix, int m, int n){
 optimisations over the above kernel:
     - float4 vectorisation for instruction level parellelism
     - __shfl_xor_sync for parellel reduction at warp level
-    - __shfl_sync
     - loop unrolling
 */
 __global__
@@ -97,6 +96,7 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
         local_max = fmaxf(local_max, local_max4);
     }
     // warp max using __shfl_xor_sync
+    #pragma unroll
     for(int offset=16; offset>0; offset>>=1){
         float remote_local_max = __shfl_xor_sync(0xffffffff, local_max, offset);
         local_max = fmaxf(local_max, remote_local_max);
@@ -129,6 +129,8 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
 
         //matrix4[row*(n/4) + col] = col_el;
     }
+    
+    #pragma unroll
     for(int offset=16; offset>0; offset>>=1){
         local_sum += __shfl_xor_sync(0xffffffff, local_sum, offset);
     }
