@@ -86,7 +86,7 @@ optimisations over the above kernel:
 __global__
 void three_pass_optimized_softmax(float* matrix, int m, int n){
     unsigned int row = blockIdx.x;
-
+    //shared memory size now should be block_size/32 since we are using __shfl_xor_sync
     extern __shared__ float row_data[];
     float4* matrix4 = reinterpret_cast<float4*>(matrix);
 
@@ -96,10 +96,19 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
         float local_max4 = fmaxf(fmaxf(col_el.x, col_el.y), fmaxf(col_el.z, col_el.w));
         local_max = fmaxf(local_max, local_max4);
     }
-    row_data[threadIdx.x] = local_max;
+    // warp max using __shfl_xor_sync
+    for(int offset=16; offset>0; offset>>=1){
+        float remote_local_max = __shfl_xor_sync(0xffffffff, local_max, offset);
+        local_max = fmaxf(local_max, remote_local_max);
+    }
+    float warp_max = local_max;
+
+    if(threadIdx.x%32 == 0){
+        row_data[threadIdx.x/32] = warp_max;
+    }
     __syncthreads();
 
-    for(unsigned int s=blockDim.x/2; s>0; s>>=1){
+    for(unsigned int s=(blockDim.x/32)/2; s>0; s>>=1){
         if(threadIdx.x < s){
             row_data[threadIdx.x] = fmaxf(row_data[threadIdx.x], row_data[threadIdx.x + s]);
         }
@@ -120,10 +129,17 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
 
         //matrix4[row*(n/4) + col] = col_el;
     }
-    row_data[threadIdx.x] = local_sum;
+    for(int offset=16; offset>0; offset>>=1){
+        local_sum += __shfl_xor_sync(0xffffffff, local_sum, offset);
+    }
+    float warp_sum = local_sum;
+
+    if(threadIdx.x%32 ==0){
+        row_data[threadIdx.x/32] = warp_sum;
+    }
     __syncthreads();
 
-    for(unsigned int s=blockDim.x/2; s>0; s>>=1){
+    for(unsigned int s=(blockDim.x/32)/2; s>0; s>>=1){
         if(threadIdx.x < s){
             row_data[threadIdx.x] += row_data[threadIdx.x + s];
         }
@@ -133,16 +149,11 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
 
     for(unsigned int col=threadIdx.x; col<n/4; col+=blockDim.x){
         float4 col_el = matrix4[row*(n/4) + col];
-        col_el.x = expf(col_el.x-row_max);
-        col_el.y = expf(col_el.y-row_max);
-        col_el.z = expf(col_el.z-row_max);
-        col_el.w = expf(col_el.w-row_max);
+        col_el.x = expf(col_el.x - row_max) / scaling_factor;
+        col_el.y = expf(col_el.y - row_max) / scaling_factor;
+        col_el.z = expf(col_el.z - row_max) / scaling_factor;
+        col_el.w = expf(col_el.w - row_max) / scaling_factor;
         
-        matrix4[row*(n/4) + col] =  make_float4(
-            col_el.x /= scaling_factor,
-            col_el.y /= scaling_factor,
-            col_el.z /= scaling_factor,
-            col_el.w /= scaling_factor
-        );
+        matrix4[row*(n/4) + col] =  col_el;
     }    
 }
