@@ -81,6 +81,12 @@ optimisations over the above kernel:
     - float4 vectorisation for instruction level parellelism
     - __shfl_xor_sync for parellel reduction at warp level
     - loop unrolling
+
+update : this kernel is still memory bound since we are 
+        doing too few ops compared to the data we have to
+        move back and forth from global memory.
+    to further optimise the softmax kernel we need to reduce
+    passes to global memory. this can be done by online softmax.
 */
 __global__
 void three_pass_optimized_softmax(float* matrix, int m, int n){
@@ -115,7 +121,7 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
         __syncthreads();
     }
     float row_max = row_data[0];
-// can we use const memory to parellelly broadcast the exp(x-row_max)??
+
     float local_sum = 0.0f;
     for(unsigned int col=threadIdx.x; col<n/4; col+=blockDim.x){
         float4 col_el = matrix4[row*(n/4) + col];
@@ -158,4 +164,62 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
         
         matrix4[row*(n/4) + col] =  col_el;
     }    
+}
+
+
+// online softmax kernel
+__global__
+void online_softmax(float* matrix, int m, int n){
+    unsigned int row = blockIdx.x;
+    // shared memory now will store both local_max and local_scaling_factor
+    // we use float2 for it
+    extern __shared__ float2 row_data[];
+    float4* matrix4 = reinterpret_cast<float4*>(matrix);
+
+    float local_max = -INFINITY;
+    float local_scaling_factor = 0.0f;
+
+    for(int col=threadIdx.x; col<(n/4); col+=blockDim.x){
+        float4 col_el = matrix4[row*(n/4)+col];
+        float col_els[4] = {col_el.x, col_el.y, col_el.z, col_el.w};
+
+        for(int i=0; i<4; i++) {
+        float val = col_els[i];
+            if (val > local_max) {
+                local_scaling_factor = local_scaling_factor * expf(local_max - val) + 1.0f;
+                local_max = val;
+            } else {
+                local_scaling_factor += expf(val - local_max);
+            }
+        }
+    }
+    row_data[threadIdx.x] = make_float2(local_max, local_scaling_factor);
+    __syncthreads();
+
+    for(unsigned s=blockDim.x/2; s>0; s>>=1){
+        if(threadIdx.x<s){  
+            float2 el1 = row_data[threadIdx.x];
+            float2 el2 = row_data[threadIdx.x + s];
+
+            float rel_max = fmaxf(el1.x, el2.x);
+            float combined_sum = el1.y*expf(el1.x-rel_max) + el2.y*expf(el2.x-rel_max);
+
+            row_data[threadIdx.x] = make_float2(rel_max, combined_sum);
+        }
+        __syncthreads();
+    }
+    float row_max = row_data[0].x;
+    float scaling_factor = row_data[0].y;
+
+    for(unsigned int col=threadIdx.x; col<(n/4); col+=blockDim.x){
+        float4 col_el = matrix4[row*(n/4) + col];
+
+        col_el.x = expf(col_el.x - row_max) / scaling_factor;
+        col_el.y = expf(col_el.y - row_max) / scaling_factor;
+        col_el.z = expf(col_el.z - row_max) / scaling_factor;
+        col_el.w = expf(col_el.w - row_max) / scaling_factor;
+        
+        matrix4[row*(n/4) + col] =  col_el;
+    }
+
 }
