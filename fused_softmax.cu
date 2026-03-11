@@ -185,6 +185,7 @@ register pressure. so we have to keep this in mind
 __global__
 void online_softmax(float* matrix, int m, int n){
     unsigned int row = blockIdx.x;
+    float* row_ptr = matrix + (row*n);
     // shared memory now will store both local_max and local_scaling_factor
     // we use float2 for it
     extern __shared__ float2 row_data[];
@@ -211,6 +212,16 @@ void online_softmax(float* matrix, int m, int n){
             } else {
                 local_scaling_factor += expf(val - local_max);
             }
+        }
+    }
+    // handling elements that are not at multiple of 4 indexes (at max there can be 3)
+    for(int col=(n/4)*4 + threadIdx.x; col<n; col+=blockDim.x){
+        float col_el = row_ptr[col];
+        if (col_el > local_max) {
+            local_scaling_factor = local_scaling_factor * expf(local_max - col_el) + 1.0f;
+            local_max = col_el;
+        } else {
+            local_scaling_factor += expf(col_el - local_max);
         }
     }
     row_data[threadIdx.x] = make_float2(local_max, local_scaling_factor);
@@ -240,6 +251,10 @@ void online_softmax(float* matrix, int m, int n){
         col_el.w = expf(col_el.w - row_max) / scaling_factor;
         
         matrix4[row*(n/4) + col] =  col_el;
+    }
+    for(unsigned int col=(n/4)*4 + threadIdx.x; col<n; col+=blockDim.x){
+        float col_el = row_ptr[col];
+        row_ptr[col] = expf(col_el - row_max) / scaling_factor;
     }
 
 }
