@@ -168,6 +168,20 @@ void three_pass_optimized_softmax(float* matrix, int m, int n){
 
 
 // online softmax kernel
+
+/*
+now we will use thread coarsening to reduce latency even further
+by leveraging asynchronous and pipelined memory bus (controller)
+
+each thread loads 8 floats instead of 4.
+this helps because while ALUs of core work on first4 elements,
+the controller keeps next 4 already loaded(or on their way)
+hiding warps from stalling and keeping cores busy.
+
+thread coarsening can lead to reduced occupancy due to increased
+register pressure. so we have to keep this in mind
+*/ 
+
 __global__
 void online_softmax(float* matrix, int m, int n){
     unsigned int row = blockIdx.x;
@@ -179,12 +193,18 @@ void online_softmax(float* matrix, int m, int n){
     float local_max = -INFINITY;
     float local_scaling_factor = 0.0f;
 
-    for(int col=threadIdx.x; col<(n/4); col+=blockDim.x){
-        float4 col_el = matrix4[row*(n/4)+col];
-        float col_els[4] = {col_el.x, col_el.y, col_el.z, col_el.w};
+    for(int col=threadIdx.x; col<(n/4); col+=blockDim.x*2){
+        float4 col_el_1 = matrix4[row*(n/4)+col];
+        float4 col_el_2 = {-INFINITY, -INFINITY, -INFINITY, -INFINITY};
+        if (col + blockDim.x < (n/4)) {
+            col_el_2 = matrix4[row * (n/4) + col + blockDim.x];
+        }
+        float col_els[8] = {col_el_1.x, col_el_1.y, col_el_1.z, col_el_1.w, 
+                            col_el_2.x, col_el_2.y, col_el_2.z, col_el_2.w};
 
-        for(int i=0; i<4; i++) {
-        float val = col_els[i];
+        #pragma unroll
+        for(int i=0; i<8; i++) {
+            float val = col_els[i];
             if (val > local_max) {
                 local_scaling_factor = local_scaling_factor * expf(local_max - val) + 1.0f;
                 local_max = val;
@@ -223,3 +243,7 @@ void online_softmax(float* matrix, int m, int n){
     }
 
 }
+
+/*
+implement optimizations and handle edge cases of imperfect matrix
+*/
