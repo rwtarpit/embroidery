@@ -180,6 +180,13 @@ hiding warps from stalling and keeping cores busy.
 
 thread coarsening can lead to reduced occupancy due to increased
 register pressure. so we have to keep this in mind
+
+NOTE::
+to use this kernel on matrix/input of all row sizes(n),
+we need to make sure to use padding while launching
+the kernel due to use of float4 here.
+if kernel can't find memory addresses to be divisible of 16(due to float4),
+it will crash due to illegal memory access.
 */ 
 
 __global__
@@ -258,7 +265,3 @@ void online_softmax(float* matrix, int m, int n){
     }
 
 }
-
-/*
-implement optimizations and handle edge cases of imperfect matrix
-*/
