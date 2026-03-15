@@ -48,7 +48,7 @@ void GEMM(float* A, float* B, float* C, int m, int k, int n, float alpha, float 
         __syncthreads();
 
         for(int col=threadIdx.x; col<n; col+=blockDim.x){
-            C[row*n + col] += row_A[i] * tile_B[col];
+            C[row*n + col] += alpha * row_A[i] * tile_B[col];
         }
         __syncthreads();
     }    
