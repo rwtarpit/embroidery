@@ -366,7 +366,7 @@ def mla_decode_fwd_kernel(
         tile_output = tile_output*rescale_factor[:,None]
         tile_output = tl.dot(p.to(tl.bfloat16), v_tile.to(tl.bfloat16), acc=tile_output)        
         
-    tile_output = tile_output/norm_factor[:,None]    
+    tile_output = (tile_output/norm_factor[:,None]).to(tl.bfloat16)    
     tl.store(o_block_ptr, tile_output, boundary_check=(0,1))
     
     
@@ -403,7 +403,7 @@ def custom_kernel(data):
     # Q_TILE_SIZE: How many heads a single program handles
     # KV_TILE_SIZE: How many KV tokens to load in the inner loop
     Q_TILE_SIZE = 1 
-    KV_TILE_SIZE = 128
+    KV_TILE_SIZE = 32
     
     # 6. Grid Calculation
     # program_id(0) -> seq_idx (Batch/Sequence)
@@ -442,8 +442,8 @@ def custom_kernel(data):
         d_KV=d_KV, 
         d_O=d_O,
         # Optimization hints for MI355X
-        num_warps=4,
-        num_stages=3
+        #num_warps=4,
+        #num_stages=3
     )
 
     return output
