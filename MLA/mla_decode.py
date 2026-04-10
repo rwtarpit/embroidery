@@ -442,7 +442,7 @@ def custom_kernel(data):
         d_KV=d_KV, 
         d_O=d_O,
         # Optimization hints for MI355X
-        #num_warps=4,
+        num_warps=16,
         #num_stages=3
     )
 
