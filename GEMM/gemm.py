@@ -7,11 +7,6 @@ from utils import make_match_reference
 import triton
 import triton.language as tl
 
-"""
-def custom_kernel(data: input_t) -> output_t:
-    a, b, c = data
-    c[...] = a @ b
-    return c"""
 
 # KxM @ MxN == KxN
 
@@ -65,16 +60,17 @@ def matmul_kernel(a_ptr, b_ptr, c_ptr,
         block_shape=(K_TILE_SIZE, N_TILE_SIZE),
         order=(1, 0)
     )
-    tl.store(c_block_ptr, accum, boundary_check=(0, 1))
+    tl.store(c_block_ptr, accum.to(tl.float16), boundary_check=(0, 1))
     
     
-def matmul(data: input_t) -> output_t:
+def custom_kernel(data: input_t) -> output_t:
     a,b,c = data
     K,M = a.shape
     N = b.shape[-1]
-    grid = (K,N)
     
-    K_TILE_SIZE, N_TILE_SIZE, M_TILE_SIZE = 32,32,32
+    K_TILE_SIZE, N_TILE_SIZE, M_TILE_SIZE = 128, 128, 32
+    
+    grid = (triton.cdiv(K, K_TILE_SIZE), triton.cdiv(N, N_TILE_SIZE))
     
     matmul_kernel[grid](
         a,b,c,
@@ -82,8 +78,10 @@ def matmul(data: input_t) -> output_t:
         b.stride(0), b.stride(1),
         c.stride(0), c.stride(1),
         K, M, N,
-        K_TILE_SIZE, N_TILE_SIZE, M_TILE_SIZE
+        K_TILE_SIZE, N_TILE_SIZE, M_TILE_SIZE,
+        num_warps = 4,
+        num_stages = 4
     )
     return c
 
-check_implementation = make_match_reference(matmul)
+check_implementation = make_match_reference(custom_kernel)
