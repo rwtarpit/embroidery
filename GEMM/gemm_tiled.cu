@@ -12,11 +12,36 @@ void gemm( float* A, float* B, float* C,int k, int m, int n, int TOTAL_THREADS){
     int tile_x = blockIdx.x;
     int tile_y = blockIdx.y;
     int WARP_SIZE = 32;
-    int warp_id = threadIdx.x / WARP_SIZE;
     int TILE_SIZE_N = 128;
     int TILE_SIZE_K = 128;
     int TILE_SIZE_M = 16;   // inner dim
-    
+
+    // warp tiling
+    int WARP_TILE_K = 64;
+    int WARP_TILE_N = 64;
+    // WARP_TILE_M will be 16; inner dim
+
+    // 2D square block of 4 warps
+    int warp_id = threadIdx.x / WARP_SIZE;
+    int warp_row = warp_id / 2;
+    int warp_col = warp_id % 2;
+
+    // thread tiling
+    int THREAD_TILE_K = 8;  // single iteration
+    int THREAD_TILE_N = 4;
+    int THREAD_TILE_N_ITER = 4;
+
+    // thread in warp
+    int warpTid = threadIdx.x % WARP_SIZE;  // 0-31
+    int warpTidRow = warpTid / THREAD_TILE_N;   // 0-7
+    int warpTidCol = warpTid % THREAD_TILE_N;   // 0-3
+    int warpsliceN = WARP_TILE_N / THREAD_TILE_N_ITER; // 16
+
+    // registers to accumulate data
+    float REG_A[THREAD_TILE_K] = {0.0};
+    float REG_B[THREAD_TILE_N*THREAD_TILE_N_ITER] = {0.0};
+    float THREAD_OUT[THREAD_TILE_K*THREAD_TILE_N*THREAD_TILE_N_ITER] = {0.0};
+
     A += tile_x * TILE_SIZE_K * m;
     B += tile_y * TILE_SIZE_N;
 
@@ -35,9 +60,6 @@ void gemm( float* A, float* B, float* C,int k, int m, int n, int TOTAL_THREADS){
     float4* vector_A = reinterpret_cast<float4*>(A);
     float4* vector_B = reinterpret_cast<float4*>(B);
     float4* vector_C = reinterpret_cast<float4*>(C);
-
-    float REG_A[4];
-    float REG_B[4];
 
     // outer load
     for(int blkId=0; blkId<m; blkId+=TILE_SIZE_M){
@@ -59,17 +81,37 @@ void gemm( float* A, float* B, float* C,int k, int m, int n, int TOTAL_THREADS){
         }
         __syncthreads();
 
-        // load B's tile from SMEM into registers (need 16 elements)
-        for(int i=0; i+row_stride_B<TILE_SIZE_M; i+=row_stride_B){
-            for(int j=0; j<4; ++j){
-                REG_B[j] = smem_B[(innerRowB+i)*n + innerColB + (WARP_SIZE*j)];
+        // outer loop
+        // we iteratively load partial tiles from smem
+        for(int dotIdx=0; dotIdx<TILE_SIZE_M; ++dotIdx){
+
+            // load from A
+            for(int el=0; el<THREAD_TILE_K; ++el){
+                REG_A[el] = smem_A[warp_row*WARP_TILE_K + dotIdx*TILE_SIZE_K + warpTidRow*THREAD_TILE_K + el];
+            }
+            // load from B
+            for(int i=0; i<THREAD_TILE_N_ITER; ++i){
+                for(int el=0; el<THREAD_TILE_N; ++el){
+                    REG_B[i*THREAD_TILE_N + el] = smem_B[warp_col*WARP_TILE_N + dotIdx*TILE_SIZE_N + i*warpsliceN + warpTidCol*THREAD_TILE_N + el];
+                }
+            }
+            // compute
+            for(int wCol=0; wCol<THREAD_TILE_N_ITER; ++wCol){
+                for(int resIdxK=0; resIdxK<THREAD_TILE_K; ++resIdxK){
+                    for(int resIdxN=0; resIdxN<THREAD_TILE_N; ++resIdxN){
+                        THREAD_OUT[resIdxK*(THREAD_TILE_N*THREAD_TILE_N_ITER) + wCol*THREAD_TILE_N + resIdxN] +=
+                            REG_A[resIdxK] * REG_B[wCol*THREAD_TILE_N + resIdxN];
+                    }
+                }
             }
         }
-        // load A's tile from SMEM into registers
-
 
         B += TILE_SIZE_M * n;
         A += TILE_SIZE_M;
+        __syncthreads();
     }
+
+    // store back to GMEM
+
 
 }
