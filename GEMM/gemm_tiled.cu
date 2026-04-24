@@ -7,8 +7,10 @@
 // SMEM = [128*16*2] = 16KB/block for fp32
 // each block calculates one output tile
 // grid= (32,40); block= (128,)
+
+// acc to my brain, As will have 2 way bank conflict and Bs will have none
 __global__
-void gemm( float* A, float* B, float* C,int k, int m, int n, int TOTAL_THREADS){
+void gemm( float* A, float* B, float* C,int k, int m, int n, int TOTAL_THREADS, float alpha, float beta){
     int tile_x = blockIdx.x;
     int tile_y = blockIdx.y;
     int WARP_SIZE = 32;
@@ -44,6 +46,8 @@ void gemm( float* A, float* B, float* C,int k, int m, int n, int TOTAL_THREADS){
 
     A += tile_x * TILE_SIZE_K * m;
     B += tile_y * TILE_SIZE_N;
+    // bring C to start of warp for writing output back
+    C+= tile_y*TILE_SIZE_K*m + tile_x*TILE_SIZE_N + warp_row*warpTidRow*m + warp_col*warpTidCol;
 
     int row_stride_B = TOTAL_THREADS / (TILE_SIZE_N/4);   // each thread skips 4 rows in each iteration
     int innerRowB = threadIdx.x / (TILE_SIZE_N/4);
@@ -112,6 +116,21 @@ void gemm( float* A, float* B, float* C,int k, int m, int n, int TOTAL_THREADS){
     }
 
     // store back to GMEM
-
+    for(int wCol=0; wCol<THREAD_TILE_N_ITER; ++wCol){
+        float* C_interim = C + wCol*warpsliceN;
+        for(int resIdxK=0; resIdxK<THREAD_TILE_K; ++resIdxK){
+            for(int resIdxN=0; resIdxN<THREAD_TILE_N; resIdxN+=4){  // for float4
+                float4 tmp = reinterpret_cast<float4*>(& C_interim[warpTidRow*THREAD_TILE_K*n + resIdxK*n + resIdxN])[0];
+                const int i = (resIdxK) * (TILE_SIZE_N * THREAD_TILE_N) +
+                        wCol * THREAD_TILE_N + resIdxN;
+                tmp.x = alpha * THREAD_OUT[i + 0] + beta * tmp.x;
+                tmp.y = alpha * THREAD_OUT[i + 1] + beta * tmp.y;
+                tmp.z = alpha * THREAD_OUT[i + 2] + beta * tmp.z;
+                tmp.w = alpha * THREAD_OUT[i + 3] + beta * tmp.w;
+                // write back
+                reinterpret_cast<float4*>(& C_interim[warpTidRow*THREAD_TILE_K*n + resIdxK*n + resIdxN])[0] = tmp;
+            }
+        }
+    }
 
 }
