@@ -97,32 +97,33 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
             N, K, A, B, As, Bs, innerRowA, innerColA, innerRowB, innerColB);
         __syncthreads();
 
-        for(uint tile_a=0; tile_a < TILES_PER_WARP_M; ++tile_a){
-            for(uint subtile_a=0; subtile_a<SUBTILES_PER_TILE; ++subtile_a){
-                int tile_a_idx = (warp_id + total_warps*tile_a + subtile_a*TILE_SIZE_K) * TILE_SIZE_M;
-                float* As_ptr = &As[tile_a_idx];
-                wmma::load_matrix_sync(a_frag, As_ptr, BM);
-                
-                for(uint subtile_b=0; subtile_b<SUBTILES_PER_TILE; ++subtile_b){
-                    for(uint tile_b=0; tile_b < TILES_PER_WARP_N; ++tile_b){
-                        int tile_b_idx = tile_b * TILE_SIZE_N + TILE_SIZE_K*subtile_b*BN;
-                        float* Bs_ptr = &Bs[tile_b_idx];
-                        wmma::load_matrix_sync(b_frag, Bs_ptr, BN);
+        for (uint tile_a = 0; tile_a < TILES_PER_WARP_M; ++tile_a) {
+            int row_in_M = (warp_id * TILES_PER_WARP_M + tile_a) * TILE_SIZE_M;
 
-                        wmma::mma_sync(acc_frag[tile_a][tile_b], a_frag, b_frag, acc_frag[tile_a][tile_b]);
-                    }
+            for (uint subtile = 0; subtile < SUBTILES_PER_TILE; ++subtile) {
+                // As is col-major: As[k_col * BM + m_row]
+                float* As_ptr = &As[subtile * TILE_SIZE_K * BM + row_in_M];
+                wmma::load_matrix_sync(a_frag, As_ptr, BM);
+
+                for (uint tile_b = 0; tile_b < TILES_PER_WARP_N; ++tile_b) {
+                    // Bs is row-major: Bs[k_row * BN + n_col]
+                    float* Bs_ptr = &Bs[subtile * TILE_SIZE_K * BN + tile_b * TILE_SIZE_N];
+                    wmma::load_matrix_sync(b_frag, Bs_ptr, BN);
+                    wmma::mma_sync(acc_frag[tile_a][tile_b], a_frag, b_frag, acc_frag[tile_a][tile_b]);
                 }
             }
         }
-    A += BK;       // advance A pointer along K
-    B += BK * N;   // advance B pointer along K
-    __syncthreads();
+
+        A += BK;
+        B += BK * N;
+        __syncthreads();
     }
-    // store back to GMEM
+
+    // Store
     for (uint tile_a = 0; tile_a < TILES_PER_WARP_M; ++tile_a) {
         for (uint tile_b = 0; tile_b < TILES_PER_WARP_N; ++tile_b) {
-            int row = (tile_row * BM) + (warp_id + total_warps * tile_a) * TILE_SIZE_M;
-            int col = (tile_col * BN) + tile_b * TILE_SIZE_N;
+            int row = tile_row * BM + (warp_id * TILES_PER_WARP_M + tile_a) * TILE_SIZE_M;
+            int col = tile_col * BN + tile_b * TILE_SIZE_N;
             wmma::store_matrix_sync(&C[row * N + col], acc_frag[tile_a][tile_b], N, wmma::mem_row_major);
         }
     }
