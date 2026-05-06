@@ -1,6 +1,6 @@
 # Benchamrks
 
-## Naive TF32 tiled GEMM kernel (#3453bfc)
+## Naive TF32 tiled GEMM kernel (#3c29edef7ad2a2377ab22bce009f5764e192e183)
 
 ### GEMM  A(4096x4096) @ B(4096x5120) = C(4096x5120)
 
