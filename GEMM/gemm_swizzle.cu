@@ -1,0 +1,163 @@
+/*
+each block computes a tile of output tile(BMxBN)
+each warp in block computes (BM/TILE_SIZE_M, BN/TILE_SIZE_N)
+for tf32, fragment size = (16,16,8)
+so each warp loops over 2 subtiles of A (using another subloop) with inner loop over all tiles of B (with subloop)
+*/
+
+#include <cuda_runtime.h>
+#include <cstdio>
+#include <cstdlib>
+
+#include <mma.h>
+using namespace nvcuda;
+
+#define TILE_SIZE_M 16
+#define TILE_SIZE_N 8
+#define TILE_SIZE_K 8
+#define WARP_SIZE 32
+
+// swizzling logic
+__device__ __forceinline__ int swizzle(int row, int col, int row_size){
+    int x_chunk = col >> 2;     // col/4
+    int swizzled_chunk = x_chunk ^ (row&3);
+    int col_address = (swizzled_chunk << 2) | (col & 3);    // (chunk*4) + (col%4)
+    return (row * row_size) + col_address;
+}
+// swizzle(innerColA*4 + 0, innerRowA + offset, BM)
+
+
+namespace wt {
+template <const int BM, const int BN, const int BK, const int colStrideA,
+          const int rowStrideB>
+__device__ void loadFromGmem(int N, int K, const float *A, const float *B,
+                             float *As, float *Bs, int innerRowA,// int innerColA,
+                             int innerRowB, int innerColB) {
+  for (uint offset = 0; offset + colStrideA <= BK; offset += colStrideA) {
+    const float4 tmp = reinterpret_cast<const float4 *>(
+        &A[innerRowA * K + offset * 4])[0];
+    As[swizzle(innerRowA, offset*4 + 0, BK)] = tmp.x;
+    As[swizzle(innerRowA, offset*4 + 1, BK)] = tmp.y;
+    As[swizzle(innerRowA, offset*4 + 2, BK)] = tmp.z;
+    As[swizzle(innerRowA, offset*4 + 3, BK)] = tmp.w;
+  }
+
+  for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
+    reinterpret_cast<float4 *>(
+        &Bs[(innerRowB + offset) * BN + innerColB * 4])[0] =
+        reinterpret_cast<const float4 *>(
+            &B[(innerRowB + offset) * N + innerColB * 4])[0];
+    // asm("ld.global.v4.f32 {%0, %1, %2, %3}, [%4];"
+    //     : "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 0]),
+    //       "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 1]),
+    //       "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 2]),
+    //       "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 3])
+    //     : "l"(&B[(innerRowB + offset) * N + innerColB * 4]));
+    }
+}
+}
+
+template<uint BM, uint BN, uint BK, uint NUM_THREADS>
+__global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
+
+    int tile_col = blockIdx.x;
+    int tile_row = blockIdx.y;
+
+    __shared__ float As[BM*BK];
+    __shared__ float Bs[BK*BN];
+
+    int warp_id = threadIdx.x / WARP_SIZE;  // 0-3
+    int lane_id = threadIdx.x % 32;
+    int group_id = lane_id >> 2;     // lane_id/4
+    int thread_in_group = lane_id % 4;
+    constexpr uint total_warps = NUM_THREADS / WARP_SIZE;  // 4
+    constexpr uint TILES_PER_WARP_M = (BM / total_warps) / TILE_SIZE_M;     // 2 16x16 tiles per warp
+    constexpr uint TILES_PER_WARP_N = BN / 8;   // 16 tiles (8x8)
+    
+    A += K * BM * tile_row;
+    B += BN * tile_col;
+    //C += K*BM*tile_row + tile_col*BN + warp_id*TILE_SIZE_N;
+
+    const uint innerRowA = threadIdx.x;
+    //const uint innerColA = threadIdx.x % (BK / 4);
+    const uint colStrideA = BK / 4;     // 4 for float4 vecotrised loads
+    const uint innerRowB = threadIdx.x / (BN / 4);
+    const uint innerColB = threadIdx.x % (BN / 4);
+    const uint rowStrideB = NUM_THREADS / (BN / 4);
+
+    float accum[128] = {0.0f};    
+
+    // outer-most loop over block tiles
+    for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
+        wt::loadFromGmem<BM, BN, BK, colStrideA, rowStrideB>(
+            N, K, A, B, As, Bs, innerRowA, innerRowB, innerColB);
+        __syncthreads();
+
+        for(int warp_tile_A=0; warp_tile_A<TILES_PER_WARP_M; ++warp_tile_A){
+            for(int inner_tile=0; inner_tile<2; ++inner_tile){
+                int offset_As = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M * BK + inner_tile * TILE_SIZE_K;
+                float* tile_A_ptr = &As[offset_As];
+                // load sub tile A in register fragments (swizzled)
+                float fa0 = tile_A_ptr[swizzle(group_id, thread_in_group, BK)];
+                float fa2 = tile_A_ptr[swizzle(group_id, thread_in_group + 4, BK)];
+                float fa1 = tile_A_ptr[swizzle(group_id + 8, thread_in_group, BK)];
+                float fa3 = tile_A_ptr[swizzle(group_id + 8, thread_in_group + 4, BK)];
+
+                uint32_t a0, a1, a2, a3;
+                asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a0) : "f"(fa0));
+                asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a1) : "f"(fa1));
+                asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a2) : "f"(fa2));
+                asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a3) : "f"(fa3));
+                
+                for(int warp_tile_B=0; warp_tile_B<TILES_PER_WARP_N; ++warp_tile_B){
+                    int offset_Bs = (BN*TILE_SIZE_K*inner_tile) + warp_tile_B*TILE_SIZE_N;
+                    float* tile_B_ptr = &Bs[offset_Bs];
+                    // load subtile B in register fragments
+                    float fb0 = tile_B_ptr[thread_in_group * BN + group_id];
+                    float fb1 = tile_B_ptr[(thread_in_group + 4) * BN + group_id];
+
+                    uint32_t b0, b1;
+                    asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b0) : "f"(fb0));
+                    asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b1) : "f"(fb1));
+
+                    // compute using mma ptx
+                    asm volatile(
+                        "mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32 "
+                        "{%0, %1, %2, %3}, "
+                        "{%4, %5, %6, %7}, "
+                        "{%8, %9}, "
+                        "{%0, %1, %2, %3};"
+                        : "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 0]), "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 1]),
+                        "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 2]), "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 3])
+                        : "r"(a0), "r"(a1), "r"(a2), "r"(a3),
+                        "r"(b0), "r"(b1)
+                    );
+                }
+            }
+        }    
+        A += BK;
+        B += BK * N;
+        __syncthreads();
+    }
+
+    // Store
+    for(int tile_a = 0; tile_a < TILES_PER_WARP_M; ++tile_a){
+        for(int tile_b = 0; tile_b < TILES_PER_WARP_N; ++tile_b){
+
+            int warp_row_offset = (warp_id * TILES_PER_WARP_M + tile_a) * TILE_SIZE_M;
+            int warp_col_offset = tile_b * TILE_SIZE_N;
+
+            int base = (tile_a * TILES_PER_WARP_N + tile_b) * 4;
+
+            int row_top = tile_row*BM + warp_row_offset + group_id;
+            int row_bot = tile_row*BM + warp_row_offset + group_id + 8;
+            int col_0   = tile_col*BN + warp_col_offset + thread_in_group*2;
+            int col_1   = tile_col*BN + warp_col_offset + thread_in_group*2 + 1;
+
+            C[row_top * N + col_0] = accum[base + 0];  // d0
+            C[row_top * N + col_1] = accum[base + 1];  // d1
+            C[row_bot * N + col_0] = accum[base + 2];  // d2
+            C[row_bot * N + col_1] = accum[base + 3];  // d3
+        }
+    }
+}
