@@ -31,3 +31,16 @@ DoubleBuffering2 median  10.759 ms  min  10.746 ms  max  10.870 ms  |   15.97 TF
 GEMM_tc          median   4.241 ms  min   4.233 ms  max   4.252 ms  |   40.51 TFLOPS
 
 Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.37x
+
+## Naive GEMM with tensor cores and swizzled A tiles
+
+GEMM  A(4096x4096) @ B(4096x5120) = C(4096x5120)
+
+Correctness (DoubleBuffering2)   max_err = 7.46e-03  PASS
+Correctness (GEMM_tc)            max_err = 0.00e+00  PASS
+
+cuBLAS           median   1.584 ms  min   1.573 ms  max   1.692 ms  |  108.45 TFLOPS
+DoubleBuffering2 median  10.774 ms  min  10.762 ms  max  10.881 ms  |   15.95 TFLOPS
+GEMM_tc          median   5.427 ms  min   5.418 ms  max   5.442 ms  |   31.66 TFLOPS
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.29x
