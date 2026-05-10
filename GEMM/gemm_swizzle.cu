@@ -20,7 +20,7 @@ using namespace nvcuda;
 // swizzling logic
 __device__ __forceinline__ int swizzle(int row, int col, int row_size){
     int x_chunk = col >> 2;     // col/4
-    int swizzled_chunk = x_chunk ^ (row&3);
+    int swizzled_chunk = x_chunk ^ (row&2);
     int col_address = (swizzled_chunk << 2) | (col & 3);    // (chunk*4) + (col%4)
     return (row * row_size) + col_address;
 }
@@ -28,33 +28,31 @@ __device__ __forceinline__ int swizzle(int row, int col, int row_size){
 
 
 namespace wt {
-template <const int BM, const int BN, const int BK, const int colStrideA,
-          const int rowStrideB>
-__device__ void loadFromGmem(int N, int K, const float *A, const float *B,
-                             float *As, float *Bs, int innerRowA,// int innerColA,
-                             int innerRowB, int innerColB) {
-  for (uint offset = 0; offset + colStrideA <= BK; offset += colStrideA) {
-    const float4 tmp = reinterpret_cast<const float4 *>(
-        &A[innerRowA * K + offset ])[0];
-    As[swizzle(innerRowA, offset + 0, BK)] = tmp.x;
-    As[swizzle(innerRowA, offset + 1, BK)] = tmp.y;
-    As[swizzle(innerRowA, offset + 2, BK)] = tmp.z;
-    As[swizzle(innerRowA, offset + 3, BK)] = tmp.w;
-  }
-
-  for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
-    reinterpret_cast<float4 *>(
-        &Bs[(innerRowB + offset) * BN + innerColB * 4])[0] =
-        reinterpret_cast<const float4 *>(
-            &B[(innerRowB + offset) * N + innerColB * 4])[0];
-    // asm("ld.global.v4.f32 {%0, %1, %2, %3}, [%4];"
-    //     : "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 0]),
-    //       "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 1]),
-    //       "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 2]),
-    //       "=f"(Bs[(innerRowB + offset) * BN + innerColB * 4 + 3])
-    //     : "l"(&B[(innerRowB + offset) * N + innerColB * 4]));
+    template <const int BM, const int BN, const int BK, const int rowStrideA,
+            const int rowStrideB>
+    __device__ void loadFromGmem(int N, int K, const float *A, const float *B,
+                                float *As, float *Bs, int innerRowA, int innerColA,
+                                int innerRowB, int innerColB) {
+    for (uint offset = 0; offset + rowStrideA <= BM; offset += rowStrideA) {
+        const float4 tmp = reinterpret_cast<const float4*>(
+            &A[(innerRowA + offset) * K + innerColA * 4])[0];
+        As[swizzle(innerRowA + offset, innerColA*4 + 0, BK)] = tmp.x;
+        As[swizzle(innerRowA + offset, innerColA*4 + 1, BK)] = tmp.y;
+        As[swizzle(innerRowA + offset, innerColA*4 + 2, BK)] = tmp.z;
+        As[swizzle(innerRowA + offset, innerColA*4 + 3, BK)] = tmp.w;
     }
-}
+
+    for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
+        //reinterpret_cast<float4 *>(
+            //&Bs[(innerRowB + offset) * BN + innerColB * 4])[0] =
+            const float4 tmp = reinterpret_cast<const float4 *>(
+                &B[(innerRowB + offset) * N + innerColB * 4])[0];
+            Bs[swizzle(innerRowB + offset, innerColB * 4 + 0, BN)] = tmp.x;
+            Bs[swizzle(innerRowB + offset, innerColB * 4 + 1, BN)] = tmp.y;
+            Bs[swizzle(innerRowB + offset, innerColB * 4 + 2, BN)] = tmp.z;
+            Bs[swizzle(innerRowB + offset, innerColB * 4 + 3, BN)] = tmp.w;
+        }
+    }
 }
 
 template<uint BM, uint BN, uint BK, uint NUM_THREADS>
@@ -78,9 +76,9 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
     B += BN * tile_col;
     //C += K*BM*tile_row + tile_col*BN + warp_id*TILE_SIZE_N;
 
-    const uint innerRowA = threadIdx.x;
-    //const uint innerColA = threadIdx.x % (BK / 4);
-    const uint colStrideA = BK / 4;     // 4 for float4 vecotrised loads
+    const uint innerRowA = threadIdx.x / (BK / 4);   // which row
+    const uint innerColA = threadIdx.x % (BK / 4);   // which float4 chunk
+    const uint rowStrideA = NUM_THREADS / (BK / 4);
     const uint innerRowB = threadIdx.x / (BN / 4);
     const uint innerColB = threadIdx.x % (BN / 4);
     const uint rowStrideB = NUM_THREADS / (BN / 4);
@@ -89,8 +87,8 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
 
     // outer-most loop over block tiles
     for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
-        wt::loadFromGmem<BM, BN, BK, colStrideA, rowStrideB>(
-            N, K, A, B, As, Bs, innerRowA, innerRowB, innerColB);
+        wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
+            N, K, A, B, As, Bs, innerRowA, innerColA, innerRowB, innerColB);
         __syncthreads();
 
         for(int warp_tile_A=0; warp_tile_A<TILES_PER_WARP_M; ++warp_tile_A){
@@ -111,11 +109,14 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                 asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a3) : "f"(fa3));
                 
                 for(int warp_tile_B=0; warp_tile_B<TILES_PER_WARP_N; ++warp_tile_B){
-                    int offset_Bs = (BN*TILE_SIZE_K*inner_tile) + warp_tile_B*TILE_SIZE_N;
-                    float* tile_B_ptr = &Bs[offset_Bs];
-                    // load subtile B in register fragments
-                    float fb0 = tile_B_ptr[thread_in_group * BN + group_id];
-                    float fb1 = tile_B_ptr[(thread_in_group + 4) * BN + group_id];
+                    int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
+                    int b_col_base = warp_tile_B * TILE_SIZE_N; // which N-tile
+
+                    // B fragment: row=K dim, col=N dim
+                    // fb0: row=thread_in_group,   col=group_id  (within the 8×8 subtile)
+                    // fb1: row=thread_in_group+4, col=group_id
+                    float fb0 = Bs[swizzle(b_row_base + thread_in_group,     b_col_base + group_id, BN)];
+                    float fb1 = Bs[swizzle(b_row_base + thread_in_group + 4, b_col_base + group_id, BN)];
 
                     uint32_t b0, b1;
                     asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b0) : "f"(fb0));

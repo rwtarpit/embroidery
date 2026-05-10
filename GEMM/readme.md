@@ -44,3 +44,16 @@ DoubleBuffering2 median  10.774 ms  min  10.762 ms  max  10.881 ms  |   15.95 TF
 GEMM_tc          median   5.427 ms  min   5.418 ms  max   5.442 ms  |   31.66 TFLOPS
 
 Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.29x
+
+## GEMM with swizzled A and B tiles and coalesced Global loads
+
+GEMM  A(4096x4096) @ B(4096x5120) = C(4096x5120)
+
+Correctness (DoubleBuffering2)   max_err = 7.46e-03  PASS
+Correctness (GEMM_tc)            max_err = 0.00e+00  PASS
+
+cuBLAS           median   1.581 ms  min   1.578 ms  max   1.589 ms  |  108.66 TFLOPS
+DoubleBuffering2 median  10.757 ms  min  10.743 ms  max  10.893 ms  |   15.97 TFLOPS
+GEMM_tc          median   3.670 ms  min   3.658 ms  max   3.717 ms  |   46.81 TFLOPS
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.43x
