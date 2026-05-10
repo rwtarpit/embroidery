@@ -35,11 +35,11 @@ __device__ void loadFromGmem(int N, int K, const float *A, const float *B,
                              int innerRowB, int innerColB) {
   for (uint offset = 0; offset + colStrideA <= BK; offset += colStrideA) {
     const float4 tmp = reinterpret_cast<const float4 *>(
-        &A[innerRowA * K + offset * 4])[0];
-    As[swizzle(innerRowA, offset*4 + 0, BK)] = tmp.x;
-    As[swizzle(innerRowA, offset*4 + 1, BK)] = tmp.y;
-    As[swizzle(innerRowA, offset*4 + 2, BK)] = tmp.z;
-    As[swizzle(innerRowA, offset*4 + 3, BK)] = tmp.w;
+        &A[innerRowA * K + offset ])[0];
+    As[swizzle(innerRowA, offset + 0, BK)] = tmp.x;
+    As[swizzle(innerRowA, offset + 1, BK)] = tmp.y;
+    As[swizzle(innerRowA, offset + 2, BK)] = tmp.z;
+    As[swizzle(innerRowA, offset + 3, BK)] = tmp.w;
   }
 
   for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
@@ -95,13 +95,14 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
 
         for(int warp_tile_A=0; warp_tile_A<TILES_PER_WARP_M; ++warp_tile_A){
             for(int inner_tile=0; inner_tile<2; ++inner_tile){
-                int offset_As = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M * BK + inner_tile * TILE_SIZE_K;
-                float* tile_A_ptr = &As[offset_As];
+                //int offset_As = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M * BK + inner_tile * TILE_SIZE_K;
+                //float* tile_A_ptr = &As[offset_As];
+                int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
                 // load sub tile A in register fragments (swizzled)
-                float fa0 = tile_A_ptr[swizzle(group_id, thread_in_group, BK)];
-                float fa2 = tile_A_ptr[swizzle(group_id, thread_in_group + 4, BK)];
-                float fa1 = tile_A_ptr[swizzle(group_id + 8, thread_in_group, BK)];
-                float fa3 = tile_A_ptr[swizzle(group_id + 8, thread_in_group + 4, BK)];
+                float fa0 = As[swizzle(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group,     BK)];
+                float fa2 = As[swizzle(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group + 4, BK)];
+                float fa1 = As[swizzle(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group,     BK)];
+                float fa3 = As[swizzle(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group + 4, BK)];
 
                 uint32_t a0, a1, a2, a3;
                 asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a0) : "f"(fa0));
