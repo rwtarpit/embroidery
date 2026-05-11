@@ -55,7 +55,7 @@ namespace wt {
     }
 }
 
-template<uint BM, uint BN, uint BK, uint NUM_THREADS>
+template<uint BM, uint BN, uint BK, uint NUM_THREADS, uint accum_size>
 __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
 
     int tile_col = blockIdx.x;
@@ -70,7 +70,7 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
     int thread_in_group = lane_id % 4;
     constexpr uint total_warps = NUM_THREADS / WARP_SIZE;  // 4
     constexpr uint TILES_PER_WARP_M = (BM / total_warps) / TILE_SIZE_M;     // 2 16x16 tiles per warp
-    constexpr uint TILES_PER_WARP_N = BN / 8;   // 16 tiles (8x8)
+    constexpr uint TILES_PER_WARP_N = BN / TILE_SIZE_N;   // 16 tiles (8x8)
     
     A += K * BM * tile_row;
     B += BN * tile_col;
@@ -83,7 +83,7 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
     const uint innerColB = threadIdx.x % (BN / 4);
     const uint rowStrideB = NUM_THREADS / (BN / 4);
 
-    float accum[128] = {0.0f};    
+    float accum[accum_size]= {0.0f};    
 
     // outer-most loop over block tiles
     for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
@@ -92,7 +92,7 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
         __syncthreads();
 
         for(int warp_tile_A=0; warp_tile_A<TILES_PER_WARP_M; ++warp_tile_A){
-            for(int inner_tile=0; inner_tile<2; ++inner_tile){
+            for(int inner_tile=0; inner_tile<BK/TILE_SIZE_K; ++inner_tile){
                 //int offset_As = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M * BK + inner_tile * TILE_SIZE_K;
                 //float* tile_A_ptr = &As[offset_As];
                 int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
