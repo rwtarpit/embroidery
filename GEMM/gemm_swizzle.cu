@@ -18,11 +18,19 @@ using namespace nvcuda;
 #define WARP_SIZE 32
 
 // swizzling logic
-__device__ __forceinline__ int swizzle(int row, int col, int row_size){
-    int x_chunk = col >> 2;     // col/4
-    int swizzled_chunk = x_chunk ^ (row&2);
-    int col_address = (swizzled_chunk << 2) | (col & 3);    // (chunk*4) + (col%4)
-    return (row * row_size) + col_address;
+template<int ROWS, int COLS>
+__device__ __forceinline__ int swizzle(int row, int col) {
+    static_assert((COLS % 4) == 0, "COLS must be divisible by 4");
+    static_assert((COLS/4 & (COLS/4 - 1)) == 0, "COLS/4 must be power of 2");
+    
+    constexpr int chunks_per_row = COLS / 4;
+    constexpr int chunk_mask     = chunks_per_row - 1;  // bits to XOR with
+    
+    int col_chunk       = col >> 2;                      // which float4 chunk
+    int swizzled_chunk  = col_chunk ^ (row & chunk_mask);
+    int col_swizzled    = (swizzled_chunk << 2) | (col & 3);
+    
+    return row * COLS + col_swizzled;
 }
 // swizzle(innerColA*4 + 0, innerRowA + offset, BM)
 
@@ -36,10 +44,10 @@ namespace wt {
     for (uint offset = 0; offset + rowStrideA <= BM; offset += rowStrideA) {
         const float4 tmp = reinterpret_cast<const float4*>(
             &A[(innerRowA + offset) * K + innerColA * 4])[0];
-        As[swizzle(innerRowA + offset, innerColA*4 + 0, BK)] = tmp.x;
-        As[swizzle(innerRowA + offset, innerColA*4 + 1, BK)] = tmp.y;
-        As[swizzle(innerRowA + offset, innerColA*4 + 2, BK)] = tmp.z;
-        As[swizzle(innerRowA + offset, innerColA*4 + 3, BK)] = tmp.w;
+        As[swizzle<BM,BK>(innerRowA + offset, innerColA*4 + 0)] = tmp.x;
+        As[swizzle<BM,BK>(innerRowA + offset, innerColA*4 + 1)] = tmp.y;
+        As[swizzle<BM,BK>(innerRowA + offset, innerColA*4 + 2)] = tmp.z;
+        As[swizzle<BM,BK>(innerRowA + offset, innerColA*4 + 3)] = tmp.w;
     }
 
     for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
@@ -47,10 +55,10 @@ namespace wt {
             //&Bs[(innerRowB + offset) * BN + innerColB * 4])[0] =
             const float4 tmp = reinterpret_cast<const float4 *>(
                 &B[(innerRowB + offset) * N + innerColB * 4])[0];
-            Bs[swizzle(innerRowB + offset, innerColB * 4 + 0, BN)] = tmp.x;
-            Bs[swizzle(innerRowB + offset, innerColB * 4 + 1, BN)] = tmp.y;
-            Bs[swizzle(innerRowB + offset, innerColB * 4 + 2, BN)] = tmp.z;
-            Bs[swizzle(innerRowB + offset, innerColB * 4 + 3, BN)] = tmp.w;
+            Bs[swizzle<BK,BN>(innerRowB + offset, innerColB * 4 + 0)] = tmp.x;
+            Bs[swizzle<BK,BN>(innerRowB + offset, innerColB * 4 + 1)] = tmp.y;
+            Bs[swizzle<BK,BN>(innerRowB + offset, innerColB * 4 + 2)] = tmp.z;
+            Bs[swizzle<BK,BN>(innerRowB + offset, innerColB * 4 + 3)] = tmp.w;
         }
     }
 }
@@ -97,10 +105,10 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                 //float* tile_A_ptr = &As[offset_As];
                 int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
                 // load sub tile A in register fragments (swizzled)
-                float fa0 = As[swizzle(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group,     BK)];
-                float fa2 = As[swizzle(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group + 4, BK)];
-                float fa1 = As[swizzle(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group,     BK)];
-                float fa3 = As[swizzle(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group + 4, BK)];
+                float fa0 = As[swizzle<BM,BK>(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group)];
+                float fa2 = As[swizzle<BM,BK>(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group + 4)];
+                float fa1 = As[swizzle<BM,BK>(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group)];
+                float fa3 = As[swizzle<BM,BK>(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group + 4)];
 
                 uint32_t a0, a1, a2, a3;
                 asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a0) : "f"(fa0));
@@ -115,8 +123,8 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                     // B fragment: row=K dim, col=N dim
                     // fb0: row=thread_in_group,   col=group_id  (within the 8×8 subtile)
                     // fb1: row=thread_in_group+4, col=group_id
-                    float fb0 = Bs[swizzle(b_row_base + thread_in_group,     b_col_base + group_id, BN)];
-                    float fb1 = Bs[swizzle(b_row_base + thread_in_group + 4, b_col_base + group_id, BN)];
+                    float fb0 = Bs[swizzle<BK,BN>(b_row_base + thread_in_group,     b_col_base + group_id)];
+                    float fb1 = Bs[swizzle<BK,BN>(b_row_base + thread_in_group + 4, b_col_base + group_id)];
 
                     uint32_t b0, b1;
                     asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b0) : "f"(fb0));
