@@ -44,15 +44,15 @@ namespace wt {
                                 int innerRowB, int innerColB, T &barrier) {
 
     for (uint offset = 0; offset + rowStrideA <= BM; offset += rowStrideA) {
-        cuda::memcpy_async(&As[(innerRowA+offset)*BK + innerColA*4],
+        cuda::memcpy_async(&As[swizzle<BM,BK>((innerRowA+offset), innerColA*4)],
             &A[(innerRowA + offset) * K + innerColA * 4],
             cuda::aligned_size_t<sizeof(float4)>(sizeof(float4)),
             barrier);
 
     }
     for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
-        cuda::memcpy_async(&Bs[(innerRowB+offset)*BN + innerColB*4],
-            &B[(innerRowB+offset)*N + innerColB*4],
+        cuda::memcpy_async(&Bs[swizzle<BK,BN>((innerRowB+offset), innerColB*4)],
+            &B[(innerRowB+offset)* N + innerColB*4],
             cuda::aligned_size_t<sizeof(float4)>(sizeof(float4)),
             barrier);
         }
@@ -64,6 +64,7 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
 
     auto block = cooperative_groups::this_thread_block();
     __shared__ cuda::barrier<cuda::thread_scope_block> barriers[NUM_STAGES];
+    //cuda::barrier<cuda::thread_scope_block>::arrival_token tokens[NUM_STAGES];
 
     if (block.thread_rank() == 0) {
         for (int i = 0; i < NUM_STAGES; ++i) {
@@ -75,8 +76,8 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
     int tile_col = blockIdx.x;
     int tile_row = blockIdx.y;
 
-    __shared__ float As[NUM_STAGES][BM*BK];
-    __shared__ float Bs[NUM_STAGES][BK*BN];
+    __shared__ alignas(128) float As[NUM_STAGES][BM*BK];
+    __shared__ alignas(128) float Bs[NUM_STAGES][BK*BN];
 
     int warp_id = threadIdx.x / WARP_SIZE;  // 0-3
     int lane_id = threadIdx.x % 32;
@@ -98,29 +99,34 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
     const uint rowStrideB = NUM_THREADS / (BN / 4);
     const uint NUM_TILES = K / BK;
 
-    float accum[ACCUM_SIZE]= {0.0f};    
+    float accum[ACCUM_SIZE]= {0.0f}; 
 
     // prologue
     int fetch=0;
     for(int i=0; i<NUM_STAGES-1 && i<NUM_TILES; ++i, ++fetch){
         wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
-            N, K, A, B, As + i*BM*BK, Bs + i*BK*BN, innerRowA, innerColA, innerRowB, innerColB, barriers[i]);
-        A += BK;
-        B += BK * N;
+            N, K, A + fetch * BK, B + (size_t)fetch * BK * N, As[i], Bs[i], innerRowA, innerColA, innerRowB, innerColB, barriers[i]);
+        //tokens[i] = barriers[i].arrive();
     }
+    //auto token = barriers[0].arrive(); 
+    //barriers[0].wait(std::move(token));
 
 
     // outer-most loop over block tiles
     for (uint tile = 0; tile < NUM_TILES; ++tile) {
         int cur_stage = tile % NUM_STAGES;
         int next_fetch = fetch % NUM_STAGES;
+
+        barriers[cur_stage].wait(barriers[cur_stage].arrive());
+
         if(fetch < NUM_TILES){
             wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
-            N, K, A, B, As + next_fetch*BK*BM, Bs + next_fetch*BK*BN, innerRowA, innerColA, innerRowB, innerColB, barriers[next_fetch]);
+            N, K, A + fetch * BK, B + (size_t)fetch * BK * N, As[next_fetch], Bs[next_fetch], innerRowA, innerColA, innerRowB, innerColB, barriers[next_fetch]);
+            //tokens[next_fetch] = barriers[next_fetch].arrive();
             ++fetch;
             //__syncthreads();
         }
-        barriers[cur_stage].arrive_and_wait();
+        
 
         for(int warp_tile_A=0; warp_tile_A<TILES_PER_WARP_M; ++warp_tile_A){
             for(int inner_tile=0; inner_tile<BK/TILE_SIZE_K; ++inner_tile){
@@ -128,10 +134,10 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                 //float* tile_A_ptr = &As[offset_As];
                 int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
                 // load sub tile A in register fragments (swizzled)
-                float fa0 = As[cur_stage][(warp_row_base + group_id)     * BK + inner_tile * TILE_SIZE_K + thread_in_group];
-                float fa2 = As[cur_stage][(warp_row_base + group_id)     * BK + inner_tile * TILE_SIZE_K + thread_in_group + 4];
-                float fa1 = As[cur_stage][(warp_row_base + group_id + 8) * BK + inner_tile * TILE_SIZE_K + thread_in_group];
-                float fa3 = As[cur_stage][(warp_row_base + group_id + 8) * BK + inner_tile * TILE_SIZE_K + thread_in_group + 4];
+                float fa0 = As[cur_stage][swizzle<BM,BK>(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group)];
+                float fa2 = As[cur_stage][swizzle<BM,BK>(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group + 4)];
+                float fa1 = As[cur_stage][swizzle<BM,BK>(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group)];
+                float fa3 = As[cur_stage][swizzle<BM,BK>(warp_row_base + group_id + 8, inner_tile * TILE_SIZE_K + thread_in_group + 4)];
 
                 uint32_t a0, a1, a2, a3;
                 asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(a0) : "f"(fa0));
@@ -146,8 +152,8 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                     // B fragment: row=K dim, col=N dim
                     // fb0: row=thread_in_group,   col=group_id  (within the 8×8 subtile)
                     // fb1: row=thread_in_group+4, col=group_id
-                    float fb0 = Bs[cur_stage][(b_row_base + thread_in_group)     * BN + b_col_base + group_id];
-                    float fb1 = Bs[cur_stage][(b_row_base + thread_in_group + 4) * BN + b_col_base + group_id];
+                    float fb0 = Bs[cur_stage][swizzle<BK,BN>(b_row_base + thread_in_group,     b_col_base + group_id)];
+                    float fb1 = Bs[cur_stage][swizzle<BK,BN>(b_row_base + thread_in_group + 4, b_col_base + group_id)];
 
                     uint32_t b0, b1;
                     asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b0) : "f"(fb0));
@@ -168,9 +174,8 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                 }
             }
         }    
-        A += BK;
-        B += BK * N;
-        __syncthreads();
+        //barriers[next_fetch].wait(std::move(token));
+        //__syncthreads();
     }
 
     // Store
