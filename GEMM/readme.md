@@ -75,3 +75,14 @@ Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.40x
 TC_BN      = 128; //128
 TC_BK      = 16;  //16
 TC_THREADS = 256; //256
+
+## async pipeline + swizzling + tf32 manual smem loads
+
+Correctness (DoubleBuffering2)   max_err = 7.46e-03  PASS
+Correctness (GEMM_tc)            max_err = 0.00e+00  PASS
+
+cuBLAS           median   1.587 ms  min   1.584 ms  max   1.597 ms  |  108.24 TFLOPS
+DoubleBuffering2 median  10.806 ms  min  10.754 ms  max  10.936 ms  |   15.90 TFLOPS
+GEMM_tc          median   3.190 ms  min   3.176 ms  max   3.195 ms  |   53.86 TFLOPS
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.50x
