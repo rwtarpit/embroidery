@@ -89,8 +89,11 @@ Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.50x
 
 BM: 256, BN: 128, BK: 16, NUM_THREADS: 256
 
-Also due to this the kernel is compute bound, not memory latency bound, therefore pipeling isn't increasing performance as kernel is taking excess of time in compute itself
 
 ### Profiling Result for this kernel:
 
 We are computing on whole `BK` of tile B in a warp, leading to requirement of excess registers for storing partial accumulation. This is leading to low occupancy. 
+
+Also due to this the kernel is compute bound, not memory latency bound, therefore pipeling isn't increasing performance as kernel is taking excess of time in compute itself
+
+Now, as we reduced BN to 64 from 256 and increased BM to 512, we saw +5 TFLOPS and -0.319ms speed. I think we need to change/reduce per warp allocated work to increase occupancy and reduce register pressure.
