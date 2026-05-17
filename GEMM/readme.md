@@ -86,3 +86,11 @@ DoubleBuffering2 median  10.806 ms  min  10.754 ms  max  10.936 ms  |   15.90 TF
 GEMM_tc          median   3.190 ms  min   3.176 ms  max   3.195 ms  |   53.86 TFLOPS
 
 Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.50x
+
+BM: 256, BN: 128, BK: 16, NUM_THREADS: 256
+
+Also due to this the kernel is compute bound, not memory latency bound, therefore pipeling isn't increasing performance as kernel is taking excess of time in compute itself
+
+### Profiling Result for this kernel:
+
+We are computing on whole `BK` of tile B in a warp, leading to requirement of excess registers for storing partial accumulation. This is leading to low occupancy. 
