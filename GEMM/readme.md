@@ -97,3 +97,35 @@ We are computing on whole `BK` of tile B in a warp, leading to requirement of ex
 Also due to this the kernel is compute bound, not memory latency bound, therefore pipeling isn't increasing performance as kernel is taking excess of time in compute itself
 
 Now, as we reduced BN to 64 from 256 and increased BM to 512, we saw +5 TFLOPS and -0.319ms speed. I think we need to change/reduce per warp allocated work to increase occupancy and reduce register pressure.
+
+## Story till now:
+
+By profiling our loads and compute time, we discovered that surprisingly our kernel is on opposite regime of where it should be. Even after using tensor cores our kernel sits in compute bound regime, and this is the reason why increasing num_stages in pipeline doesn't bring any performance gains. The pipeline works as it should and keeps the smem full by loading next few stages of data from smem, but compute takes so much time that the loaded tiles sit there in smem.
+
+### Profiling result for num stages = 3:
+
+avg wait cycles per block:    6101
+
+avg compute cycles per block: 365427
+
+wait / compute ratio:         0.017
+
+### Profiling result for num stages = 2:
+
+avg wait cycles per block:    6629
+
+avg compute cycles per block: 300933
+
+wait / compute ratio:         0.022
+
+### Profiling result for num stages = 1:
+
+avg wait cycles per block:    84051
+
+avg compute cycles per block: 650799
+
+wait / compute ratio:         0.129
+
+Now we can see for num stages = 2 and 3 the waiting time for next tile to be in smem (by `consumer.wait()`) is exactly the same, and so is compute time. meanwhile when we do `num_stages` = 1, ie no pipelining, wait time for data from smem increases and due to which the compute time also increases as now tensor cores are also stalling due to no data. Therefore this verifies that pipelining is indeed correct but overhead in mma instructions is too much and kernel is compute bound. 
+
+Our next target will be to explore better compute methods for better occupancy, register reuse, etc, and also look at overhead instructions like swizzling and dtype conversions, etc.
