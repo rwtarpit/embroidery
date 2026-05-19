@@ -129,3 +129,27 @@ wait / compute ratio:         0.129
 Now we can see for num stages = 2 and 3 the waiting time for next tile to be in smem (by `consumer.wait()`) is exactly the same, and so is compute time. meanwhile when we do `num_stages` = 1, ie no pipelining, wait time for data from smem increases and due to which the compute time also increases as now tensor cores are also stalling due to no data. Therefore this verifies that pipelining is indeed correct but overhead in mma instructions is too much and kernel is compute bound. 
 
 Our next target will be to explore better compute methods for better occupancy, register reuse, etc, and also look at overhead instructions like swizzling and dtype conversions, etc.
+
+## Using ldmatrix with TF32.
+
+Before `gemm_ldmatrix.cu` kernel, I assumed that ldmatrix instruction can't be used for TF32 loads due to different bit packing. But to my surprise this can be done if we manage our layout correctly and precisely follow Nvidia's PTX guide. Thanks to (Gau Nernst) for pointing and explaining this detail to me. To this,  I had to relay much of our kernel and had to transpose B tiles in SMEM to align with ldmatrix loads. we used ldmatrix.m8n8.{x4/x2} instructions for A tile and B tile respectively.
+
+
+cuBLAS           median   1.597 ms  min   1.589 ms  max   1.710 ms  |  107.55 TFLOPS
+
+DoubleBuffering2 median  10.763 ms  min  10.747 ms  max  10.918 ms  |   15.96 TFLOPS
+
+GEMM_tc          median  4.508 ms  min  4.343 ms  max  4.738 ms  |   39.07 TFLOPS
+
+
+## SWIZZLE with ldmatrix
+
+This was probably the biggest performance boost till now. To align with ldmatrix, we had to use 128 bit swizzling layout as ldmatrix uses 4 threads to load 128 contiguous bits before distributing them in fragments of different threads.
+
+cuBLAS           median   1.587 ms  min   1.584 ms  max   1.597 ms  |  108.24 TFLOPS
+
+DoubleBuffering2 median  10.806 ms  min  10.754 ms  max  10.936 ms  |   15.90 TFLOPS
+
+GEMM_tc          median   2.790 ms  min   2.706 ms  max   2.992 ms  |   81.86 TFLOPS
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.77x
