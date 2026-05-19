@@ -1,4 +1,4 @@
-# Benchamrks
+# Benchmarks
 
 ## Naive TF32 tiled GEMM kernel (#3c29edef7ad2a2377ab22bce009f5764e192e183)
 
@@ -132,7 +132,7 @@ Our next target will be to explore better compute methods for better occupancy, 
 
 ## Using ldmatrix with TF32.
 
-Before `gemm_ldmatrix.cu` kernel, I assumed that ldmatrix instruction can't be used for TF32 loads due to different bit packing. But to my surprise this can be done if we manage our layout correctly and precisely follow Nvidia's PTX guide. Thanks to (Gau Nernst) for pointing and explaining this detail to me. To this,  I had to relay much of our kernel and had to transpose B tiles in SMEM to align with ldmatrix loads. we used ldmatrix.m8n8.{x4/x2} instructions for A tile and B tile respectively.
+Before `gemm_ldmatrix.cu` kernel, I assumed that ldmatrix instruction can't be used for TF32 loads due to different bit packing. But to my surprise this can be done if we manage our layout correctly and precisely follow Nvidia's PTX guide. Thanks to [Gau Nernst](https://github.com/gau-nernst) for pointing and explaining this detail to me. To this,  I had to relay much of our kernel and had to transpose B tiles in SMEM to align with ldmatrix loads. we used ldmatrix.m8n8.{x4/x2} instructions for A tile and B tile respectively.
 
 
 cuBLAS           median   1.597 ms  min   1.589 ms  max   1.710 ms  |  107.55 TFLOPS
