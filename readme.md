@@ -8,7 +8,7 @@ GEMM stands for General Matrix Multiplication i.e `C = A x B` in linear algebra.
 
 Currently I am working on GEMM from scratch in CUDA for TF32(19 bits for maths) workloads. While working on GEMM in general I found resources for fp16/bf16 and even fp8 workloads to be quite nicely documented for almost all modern generations of GPUS (Ampere, Hopper and Blackwell) but couldn't find much on TF32 and Tensor Cores coupled together. Hence I decided to try myself.
 
-Do check (GEMM)[https://github.com/rwtarpit/embroidery/tree/main/GEMM] to follow along.
+Do check [Beating CuBLAS on GEMM](https://github.com/rwtarpit/embroidery/tree/main/GEMM) to follow along.
 
 ## MLA 
 
