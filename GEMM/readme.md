@@ -135,11 +135,23 @@ Our next target will be to explore better compute methods for better occupancy, 
 Before `gemm_ldmatrix.cu` kernel, I assumed that ldmatrix instruction can't be used for TF32 loads due to different bit packing. But to my surprise this can be done if we manage our layout correctly and precisely follow Nvidia's PTX guide. Thanks to [Gau Nernst](https://github.com/gau-nernst) for pointing and explaining this detail to me. To this,  I had to relay much of our kernel and had to transpose B tiles in SMEM to align with ldmatrix loads. we used ldmatrix.m8n8.{x4/x2} instructions for A tile and B tile respectively.
 
 
-cuBLAS           median   1.597 ms  min   1.589 ms  max   1.710 ms  |  107.55 TFLOPS
+Correctness (DoubleBuffering2)   max_err = 7.46e-03  PASS
 
-DoubleBuffering2 median  10.763 ms  min  10.747 ms  max  10.918 ms  |   15.96 TFLOPS
+Correctness (GEMM_tc)            max_err = 1.38e-02  PASS
 
-GEMM_tc          median  4.508 ms  min  4.343 ms  max  4.738 ms  |   39.07 TFLOPS
+cuBLAS           median   1.580 ms  min   1.578 ms  max   1.641 ms  |  108.73 TFLOPS
+
+DoubleBuffering2 median  10.759 ms  min  10.748 ms  max  10.878 ms  |   15.97 TFLOPS
+
+GEMM_tc          median   6.874 ms  min   6.871 ms  max   6.881 ms  |   24.99 TFLOPS
+
+avg wait cycles per block:    6475
+
+avg compute cycles per block: 737668
+
+wait / compute ratio:         0.009
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.23x
 
 
 ## SWIZZLE with ldmatrix
