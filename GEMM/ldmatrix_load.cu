@@ -9,7 +9,7 @@ so each warp loops over 2 subtiles of A (using another subloop) with inner loop 
 #include <cstdio>
 #include <cstdlib>
 #include <cooperative_groups.h>
-#include <cuda/pipeline>   // replaces cuda/barrier
+#include <cuda/pipeline>   
 #include <mma.h>
 using namespace nvcuda;
 
@@ -70,7 +70,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
 
     auto block = cooperative_groups::this_thread_block();
 
-    // pipeline shared state — replaces the barriers array
+    // pipeline shared state 
     __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, NUM_STAGES> pipe_state;
     auto pipe = cuda::make_pipeline(block, &pipe_state);
 

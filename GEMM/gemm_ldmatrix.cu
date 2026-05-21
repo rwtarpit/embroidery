@@ -9,7 +9,7 @@ so each warp loops over 2 subtiles of A (using another subloop) with inner loop 
 #include <cstdio>
 #include <cstdlib>
 #include <cooperative_groups.h>
-#include <cuda/pipeline>   // replaces cuda/barrier
+#include <cuda/pipeline>   
 #include <mma.h>
 using namespace nvcuda;
 
@@ -43,7 +43,6 @@ namespace wt {
                                  cuda::pipeline<cuda::thread_scope_block> &pipe) {
 
         // producer_acquire must be called before submitting async copies
-        // (caller is responsible — see main loop)
 
         for (uint offset = 0; offset + rowStrideA <= BM; offset += rowStrideA) {
             cuda::memcpy_async(
@@ -101,10 +100,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
 
     float accum[ACCUM_SIZE] = {0.0f};
 
-    // -----------------------------------------------------------------------
     // Prologue: fill NUM_STAGES-1 buffers without waiting
-    // producer_acquire + memcpy_async + producer_commit for each stage
-    // -----------------------------------------------------------------------
     int fetch = 0;
     for (int i = 0; i < NUM_STAGES - 1 && i < (int)NUM_TILES; ++i, ++fetch) {
         pipe.producer_acquire();                       // claim stage slot
@@ -117,14 +113,11 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         pipe.producer_commit();                        // signal copies submitted
     }
 
-    // -----------------------------------------------------------------------
     // outer-most loop over block tiles
-    // -----------------------------------------------------------------------
     for (uint tile = 0; tile < NUM_TILES; ++tile) {
         int cur_stage  = tile  % NUM_STAGES;
         int next_stage = fetch % NUM_STAGES;   // where the next fetch lands
 
-        // --- overlap: kick off next async fetch BEFORE waiting on cur_stage ---
         if (fetch < (int)NUM_TILES) {
             pipe.producer_acquire();
             wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
@@ -146,9 +139,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         pipe.consumer_wait();
         waitTime += clock64() - start;
 
-        // -----------------------------------------------------------------------
         // compute on cur_stage smem tile
-        // -----------------------------------------------------------------------
         start = clock64();
         for (int warp_tile_A = 0; warp_tile_A < TILES_PER_WARP_M; ++warp_tile_A) {
             for (int inner_tile = 0; inner_tile < BK / TILE_SIZE_K; ++inner_tile) {
@@ -209,9 +200,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         dbg[3*b + 2] = (long long)NUM_TILES;
     }
 
-    // -----------------------------------------------------------------------
     // Store
-    // -----------------------------------------------------------------------
     for (int tile_a = 0; tile_a < TILES_PER_WARP_M; ++tile_a) {
         for (int tile_b = 0; tile_b < TILES_PER_WARP_N; ++tile_b) {
 
