@@ -150,28 +150,3 @@ __global__ void gemm(float *A, float *B, float *C, int k, int m, int n,
     }
 }
 
-/*
-// benchmark against pytorch
-torch::Tensor launch_gemm(torch::Tensor A, torch::Tensor B) {
-    auto k = A.size(0);
-    auto m = A.size(1);
-    auto n = B.size(1);
-    auto C = torch::zeros({k, n}, A.options()); // zeros so beta*C is correct
-
-    const int thread_block_size = 128;
-    const dim3 blocks((k + K_TILE_SIZE - 1) / K_TILE_SIZE,
-                      (n + N_TILE_SIZE - 1) / N_TILE_SIZE);
-
-    gemm<128, 128, 16, 64, 64, 4, 8, 4, 32>
-        <<<blocks, thread_block_size>>>(
-            A.data_ptr<float>(), B.data_ptr<float>(), C.data_ptr<float>(),
-            k, m, n, thread_block_size, 1.0f, 0.0f);
-
-    cudaDeviceSynchronize();
-    return C;
-}
-
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("forward", &launch_gemm, "My GEMM kernel forward");
-}
-*/

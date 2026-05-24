@@ -134,24 +134,25 @@ Our next target will be to explore better compute methods for better occupancy, 
 
 Before `gemm_ldmatrix.cu` kernel, I assumed that ldmatrix instruction can't be used for TF32 loads due to different bit packing. But to my surprise this can be done if we manage our layout correctly and precisely follow Nvidia's PTX guide. Thanks to [Gau Nernst](https://github.com/gau-nernst) for pointing and explaining this detail to me. To this,  I had to relay much of our kernel and had to transpose B tiles in SMEM to align with ldmatrix loads. we used ldmatrix.m8n8.{x4/x2} instructions for A tile and B tile respectively.
 
+A = 128x16 B = 16x128 Threads = 128
 
 Correctness (DoubleBuffering2)   max_err = 7.46e-03  PASS
 
 Correctness (GEMM_tc)            max_err = 1.38e-02  PASS
 
-cuBLAS           median   1.580 ms  min   1.578 ms  max   1.641 ms  |  108.73 TFLOPS
+cuBLAS           median   1.580 ms  min   1.576 ms  max   1.585 ms  |  108.73 TFLOPS
 
-DoubleBuffering2 median  10.759 ms  min  10.748 ms  max  10.878 ms  |   15.97 TFLOPS
+DoubleBuffering2 median  10.768 ms  min  10.744 ms  max  10.964 ms  |   15.95 TFLOPS
 
-GEMM_tc          median   6.874 ms  min   6.871 ms  max   6.881 ms  |   24.99 TFLOPS
+GEMM_tc          median   2.887 ms  min   2.882 ms  max   2.890 ms  |   59.51 TFLOPS
 
-avg wait cycles per block:    6475
+avg wait cycles per block:    35230
 
-avg compute cycles per block: 737668
+avg compute cycles per block: 417701
 
-wait / compute ratio:         0.009
+wait / compute ratio:         0.084
 
-Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.23x
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.55x
 
 
 ## SWIZZLE with ldmatrix
@@ -165,3 +166,39 @@ DoubleBuffering2 median  10.806 ms  min  10.754 ms  max  10.936 ms  |   15.90 TF
 GEMM_tc          median   2.790 ms  min   2.706 ms  max   2.992 ms  |   81.86 TFLOPS
 
 Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.77x
+
+
+## Investigate
+
+Let us try to investigate and improve based on results / data we have and profiling our kernel again.
+
+### A100 Specs
+
+Max Shared Memory per SM: 164 KB.
+
+Max Shared Memory per Block: 163 KB
+
+L2 Cache Size: 40 MB
+
+Registers per SM: 256 KB (65,536 32-bit registers).
+
+Max Registers per Thread: 255.
+
+Max Threads per SM: 2048
+
+| A100 Variant | Memory Type | Peak Memory Bandwidth | Max Compute Throughput | Arithmetic Intensity Threshold |
+| :--- | :---: | :---: | :---: | :---: |
+| **A100 80GB SXM** | HBM2e | 2,039 GB/s | 156 TFLOPS | **76.51 FLOPs/byte** |
+| **A100 80GB PCIe** | HBM2e | 1,935 GB/s | 156 TFLOPS | **80.62 FLOPs/byte** |
+| **A100 40GB SXM / PCIe** | HBM2 | 1,555 GB/s | 156 TFLOPS | **100.32 FLOPs/byte** |
+
+To keep the tensor cores saturated we need to perform ~100 ops per byte of data loaded from GMEM. 
+
+Current Arithmetic Intensity : 128 × 16 × 128 × 2 / (128 × 16 × 2) / 4 = 32(approx)
+
+for our current tile sizes, this means our tensor cores are mostly stalling and kernel is largely memory bound. ie we need to increase arithmetic intensity. we will try 256x256 output tile keeping the TILE_K fixed to 16 to keep SMEM in check as well.
+
+that will give around 62 FLOPS/Bytes
+
+Also we need to rewrite the warp level logic to let a warp calculate more squarish subtile instead.
+
