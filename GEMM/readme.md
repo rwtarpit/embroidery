@@ -2,6 +2,8 @@
 
 ## Naive TF32 tiled GEMM kernel (#3c29edef7ad2a2377ab22bce009f5764e192e183)
 
+These initially are quick results without much detailing for baseline purpose. I will be logging more details below when i start to make substantial change or come across a new bottleneck or optimization method.
+
 ### GEMM  A(4096x4096) @ B(4096x5120) = C(4096x5120)
 
 BM = 128; BN = 128; BK = 16;  NUM_THREADS = 256;
@@ -165,7 +167,7 @@ DoubleBuffering2 median  10.806 ms  min  10.754 ms  max  10.936 ms  |   15.90 TF
 
 GEMM_tc          median   2.790 ms  min   2.706 ms  max   2.992 ms  |   81.86 TFLOPS
 
-Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.77x
+`Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.77x` (our best yet so far)
 
 
 ## Investigate
@@ -202,3 +204,47 @@ that will give around 62 FLOPS/Bytes
 
 Also we need to rewrite the warp level logic to let a warp calculate more squarish subtile instead.
 
+### Using Square block output per warp over horizontal tiles
+
+From now on we would use 128x16x128 with 256 threads for better performance quantification
+
+`ldmatrix_load.cu` uses our old horizontal strip per warp of output tile:
+
+
+cuBLAS           median   1.585 ms  min   1.580 ms  max   1.602 ms  |  108.38 TFLOPS
+
+DoubleBuffering2 median  10.777 ms  min  10.756 ms  max  10.956 ms  |   15.94 TFLOPS
+
+GEMM_tc          median   4.385 ms  min   4.382 ms  max   4.390 ms  |   39.18 TFLOPS
+
+avg wait cycles per block:    45381 
+avg compute cycles per block: 659671 
+wait / compute ratio:         0.069
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.36x
+
+`block_out.cu` uses the squarish block output per warp (32x64 per warp)
+
+cuBLAS           median   1.592 ms  min   1.583 ms  max   1.607 ms  |  107.89 TFLOPS
+
+DoubleBuffering2 median  10.766 ms  min  10.753 ms  max  10.958 ms  |   15.96 TFLOPS
+
+GEMM_tc          median   3.205 ms  min   3.167 ms  max   3.210 ms  |   53.60 TFLOPS
+
+avg wait cycles per block:    52749 
+avg compute cycles per block: 381381 
+wait / compute ratio:         0.138
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.50x
+
+As expected this works much better. The reasons for this that i came to know is lesser Smem data loading and more reuse (via broadcasting).
+
+ When each warp computes a horizontal row long output tile, for each warp we load more data:
+
+Ex : (32x16 + 16x64) = 1536 floats VS (16x16 + 16x128) = 2304 floats
+
+This means less Arithmetic Intensity per warp (I really don't know if this is a term 🙂). Another factor that I think is related here  is data reuse. In long rect. tile per warp, each warp is loading different subtile of A (no data reuse here) although each warp does use whole B  tile completely, but I dont think there is hardware level multicast feature (like Hopper TMA) in A100 and load instructions are still issued. So if i go with this theory, since we are loading more data in rect tile method, it means more instruction issues for data loading in Smem which is again stalling Tensor Cores. Would love to know concrete reasons for this one too.
+
+### Load first, Compute Altogether
+
+We are looping over a single mma instruction, ie load 2 tiles, perform `mma` and repeat, this likely again is stalling TCs. Can we pipeline this part too?

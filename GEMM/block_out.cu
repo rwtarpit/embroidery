@@ -87,10 +87,10 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
     int group_id        = lane_id >> 2;     // lane_id/4
     int thread_in_group = lane_id % 4;
     constexpr uint total_warps      = NUM_THREADS / WARP_SIZE;           // 4
-    //constexpr uint TILES_PER_WARP_M = (BM / total_warps) / TILE_SIZE_M; // 2 16x16 tiles per warp
-    //constexpr uint TILES_PER_WARP_N = BN / TILE_SIZE_N;                 // 16 tiles (8x8)
-    constexpr uint warp_m = warp_id % 4;
-    constexpr uint warp_n = warp_id / 4;
+    constexpr uint TILES_PER_WARP_M = (BM / 4) / TILE_SIZE_M;  // (128/4)/16 = 2
+    constexpr uint TILES_PER_WARP_N = (BN / 2) / TILE_SIZE_N;  // (128/2)/8  = 8
+    const uint warp_m = warp_id % 4;
+    const uint warp_n = warp_id / 4;
 
     A += K * BM * tile_row;
     B += BN * tile_col;
@@ -105,10 +105,8 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
 
     float accum[ACCUM_SIZE] = {0.0f};
 
-    // -----------------------------------------------------------------------
     // Prologue: fill NUM_STAGES-1 buffers without waiting
     // producer_acquire + memcpy_async + producer_commit for each stage
-    // -----------------------------------------------------------------------
     int fetch = 0;
     for (int i = 0; i < NUM_STAGES - 1 && i < (int)NUM_TILES; ++i, ++fetch) {
         pipe.producer_acquire();                       // claim stage slot
@@ -121,9 +119,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         pipe.producer_commit();                        // signal copies submitted
     }
 
-    // -----------------------------------------------------------------------
     // outer-most loop over block tiles
-    // -----------------------------------------------------------------------
     for (uint tile = 0; tile < NUM_TILES; ++tile) {
         int cur_stage  = tile  % NUM_STAGES;
         int next_stage = fetch % NUM_STAGES;   // where the next fetch lands
@@ -150,14 +146,12 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         pipe.consumer_wait();
         waitTime += clock64() - start;
 
-        // -----------------------------------------------------------------------
         // compute on cur_stage smem tile
-        // -----------------------------------------------------------------------
         start = clock64();
         for (int warp_tile_A = 0; warp_tile_A < TILES_PER_WARP_M; ++warp_tile_A) {
             for (int inner_tile = 0; inner_tile < BK / TILE_SIZE_K; ++inner_tile) {
 
-                int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
+                int warp_row_base = (warp_m * (BM/4) +  warp_tile_A*TILE_SIZE_M);
                 // Each thread provides address of its row within its assigned sub-tile
                 int row_in_tile = lane_id % 16;   // 0-15: natural row within the 16-row tile
                 int k_half      = lane_id / 16;   // 0 or 1: selects K-cols 0-3 or 4-7
@@ -177,7 +171,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                 for (int warp_tile_B = 0; warp_tile_B < TILES_PER_WARP_N; ++warp_tile_B) {
 
                     int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
-                    int b_col_base = warp_tile_B * TILE_SIZE_N; // which N-tile
+                    int b_col_base = warp_n*(BN/2) + (warp_tile_B * TILE_SIZE_N); // which N-tile
                     
                     int swizzled_offset_B0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_col_base + group_id);
                     int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
@@ -218,26 +212,29 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         dbg[3*b + 2] = (long long)NUM_TILES;
     }
 
-    // -----------------------------------------------------------------------
     // Store
-    // -----------------------------------------------------------------------
     for (int tile_a = 0; tile_a < TILES_PER_WARP_M; ++tile_a) {
         for (int tile_b = 0; tile_b < TILES_PER_WARP_N; ++tile_b) {
 
-            int warp_row_offset = (warp_id * TILES_PER_WARP_M + tile_a) * TILE_SIZE_M;
-            int warp_col_offset = tile_b * TILE_SIZE_N;
+             int acc_base = (tile_a * TILES_PER_WARP_N + tile_b) * 4;
 
-            int base = (tile_a * TILES_PER_WARP_N + tile_b) * 4;
+            int row_base = tile_row * BM
+                         + warp_m * (BM / 4)          // which M-partition this warp owns
+                         + tile_a * TILE_SIZE_M;       // which 16-row tile within partition
 
-            int row_top = tile_row * BM + warp_row_offset + group_id;
-            int row_bot = tile_row * BM + warp_row_offset + group_id + 8;
-            int col_0   = tile_col * BN + warp_col_offset + thread_in_group * 2;
-            int col_1   = tile_col * BN + warp_col_offset + thread_in_group * 2 + 1;
+            int col_base = tile_col * BN
+                         + warp_n * (BN / 2)          // which N-partition this warp owns
+                         + tile_b * TILE_SIZE_N;       // which 8-col tile within partition
 
-            C[row_top * N + col_0] = accum[base + 0];  // d0
-            C[row_top * N + col_1] = accum[base + 1];  // d1
-            C[row_bot * N + col_0] = accum[base + 2];  // d2
-            C[row_bot * N + col_1] = accum[base + 3];  // d3
+            int row_top = row_base + group_id;
+            int row_bot = row_base + group_id + 8;
+            int col_0   = col_base + thread_in_group * 2;
+            int col_1   = col_base + thread_in_group * 2 + 1;
+
+            C[row_top * N + col_0] = accum[acc_base + 0];  // d0
+            C[row_top * N + col_1] = accum[acc_base + 1];  // d1
+            C[row_bot * N + col_0] = accum[acc_base + 2];  // d2
+            C[row_bot * N + col_1] = accum[acc_base + 3];  // d3
         }
     }
 }
