@@ -34,6 +34,8 @@ __device__ __forceinline__ int swizzle(int row, int col) {
     return row * COLS + col_swizzled;
 }
 
+
+
 namespace wt {
     template <const int BM, const int BN, const int BK, const int rowStrideA,
               const int rowStrideB>
@@ -44,7 +46,7 @@ namespace wt {
 
         // producer_acquire must be called before submitting async copies
         // (caller is responsible — see main loop)
-
+#pragma unroll
         for (uint offset = 0; offset + rowStrideA <= BM; offset += rowStrideA) {
             int swizzled_offset = swizzle<BM, BK>(innerRowA + offset, innerColA * 4);
             cuda::memcpy_async(
@@ -53,6 +55,7 @@ namespace wt {
                 cuda::aligned_size_t<sizeof(float4)>(sizeof(float4)),
                 pipe);
         }
+#pragma unroll
         for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
             int swizzled_offset = swizzle<BK, BN>(innerRowB + offset, innerColB * 4);
             cuda::memcpy_async(
@@ -86,7 +89,6 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
     int lane_id = threadIdx.x % 32;
     int group_id        = lane_id >> 2;     // lane_id/4
     int thread_in_group = lane_id % 4;
-    constexpr uint total_warps      = NUM_THREADS / WARP_SIZE;           // 4
     constexpr uint TILES_PER_WARP_M = (BM / 4) / TILE_SIZE_M;  // (128/4)/16 = 2
     constexpr uint TILES_PER_WARP_N = (BN / 2) / TILE_SIZE_N;  // (128/2)/8  = 8
     const uint warp_m = warp_id % 4;
@@ -137,10 +139,8 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
             ++fetch;
         }
 
-        uint32_t frag_A[4];
-        //uint32_t frag_B[2];
-        float* As_ptr;
-        float* Bs_ptr;
+        uint32_t frag_A[2][4];
+        uint32_t frag_B[8][2];
         // wait until cur_stage data is fully in smem, then release the slot
         start = clock64();
         pipe.consumer_wait();
@@ -148,10 +148,12 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
 
         // compute on cur_stage smem tile
         start = clock64();
-        for (int warp_tile_A = 0; warp_tile_A < TILES_PER_WARP_M; ++warp_tile_A) {
-            for (int inner_tile = 0; inner_tile < BK / TILE_SIZE_K; ++inner_tile) {
-
-                int warp_row_base = (warp_m * (BM/4) +  warp_tile_A*TILE_SIZE_M);
+#pragma unroll
+        for (int inner_tile = 0; inner_tile < BK / TILE_SIZE_K; ++inner_tile) {
+#pragma unroll
+            for (int i = 0; i < TILES_PER_WARP_M; ++i) {
+            
+                int warp_row_base = (warp_m * (BM/4) +  i*TILE_SIZE_M);
                 // Each thread provides address of its row within its assigned sub-tile
                 int row_in_tile = lane_id % 16;   // 0-15: natural row within the 16-row tile
                 int k_half      = lane_id / 16;   // 0 or 1: selects K-cols 0-3 or 4-7
@@ -164,26 +166,26 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                 asm volatile(
                     "ldmatrix.sync.aligned.m8n8.x4.shared.b16 "
                     "{%0, %1, %2, %3}, [%4];\n"
-                    : "=r"(frag_A[0]), "=r"(frag_A[1]), "=r"(frag_A[2]), "=r"(frag_A[3]) // Outputs
+                    : "=r"(frag_A[i][0]), "=r"(frag_A[i][1]), "=r"(frag_A[i][2]), "=r"(frag_A[i][3]) // Outputs
                     : "r"(As_ptr_)                                                          // Input
                 );
+            }
+#pragma unroll
+            for (int j = 0; j < TILES_PER_WARP_N; ++j) {
 
-                for (int warp_tile_B = 0; warp_tile_B < TILES_PER_WARP_N; ++warp_tile_B) {
+                int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
+                int b_col_base = warp_n*(BN/2) + (j * TILE_SIZE_N); // which N-tile
+                
+                int swizzled_offset_B0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_col_base + group_id);
+                int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
 
-                    int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
-                    int b_col_base = warp_n*(BN/2) + (warp_tile_B * TILE_SIZE_N); // which N-tile
+                frag_B[j][0] = __float_as_uint(Bs[cur_stage][swizzled_offset_B0]);
+                frag_B[j][1] = __float_as_uint(Bs[cur_stage][swizzled_offset_B1]);
+            }
+#pragma unroll
+            for(int i=0; i<TILES_PER_WARP_M; ++i){
+                for(int j=0; j<TILES_PER_WARP_N; ++j){
                     
-                    int swizzled_offset_B0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_col_base + group_id);
-                    int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
-
-                    float fb0 = Bs[cur_stage][swizzled_offset_B0];
-                    float fb1 = Bs[cur_stage][swizzled_offset_B1];
-
-                    uint32_t b0, b1;
-                    asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b0) : "f"(fb0));
-                    asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b1) : "f"(fb1));
-                    
-
                     // compute using mma ptx
                     asm volatile(
                         "mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32 "
@@ -191,12 +193,12 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                         "{%4, %5, %6, %7}, "
                         "{%8, %9}, "
                         "{%0, %1, %2, %3};"
-                        : "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 0]),
-                          "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 1]),
-                          "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 2]),
-                          "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 3])
-                        : "r"(frag_A[0]), "r"(frag_A[1]), "r"(frag_A[2]), "r"(frag_A[3]),
-                          "r"(b0), "r"(b1)
+                        : "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 0]),
+                          "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 1]),
+                          "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 2]),
+                          "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 3])
+                        : "r"(frag_A[i][0]), "r"(frag_A[i][1]), "r"(frag_A[i][2]), "r"(frag_A[i][3]),
+                          "r"(frag_B[j][0]), "r"(frag_B[j][1])
                     );
                 }
             }
@@ -213,7 +215,9 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
     }
 
     // Store
+#pragma unroll
     for (int tile_a = 0; tile_a < TILES_PER_WARP_M; ++tile_a) {
+#pragma unroll
         for (int tile_b = 0; tile_b < TILES_PER_WARP_N; ++tile_b) {
 
              int acc_base = (tile_a * TILES_PER_WARP_N + tile_b) * 4;
