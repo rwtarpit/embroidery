@@ -258,3 +258,9 @@ CUrrently we have hardcoded 128x16x128 tile size after the new warp layout setup
 The 128x16x128 input tiles takes 16KBs memory (~52% of CuBLAS). And for K=32 takes 32KBs (~64% of CuBLAS) and K=64 takes 64kBs (~70% of CuBLAS).
 
 With 164KBs at our hold, we can increase M and N. With increase in tile size we need to remap the warps completely and potentially generalise them for experimenting with tile sizes.
+
+#### ~80% of CuBLAS
+
+As expected, increasing tile sizes gets us back to 80% performance with the new warp layout. with `256x32x128` BMxBKxBN with same warp layout of 4x2, though now each tile takes 48KBs of SMEM and we are using double buffering, ie 96KBs SMEM and thats unfortunately means one block at a time in SM.
+
+Apparently using `256x32x64` gives us ~71% with 80KBs per block, ie just enough for 2 blocks being scheduled per SM, resulting in half the thread block waves.
