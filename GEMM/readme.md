@@ -248,3 +248,13 @@ This means less Arithmetic Intensity per warp (I really don't know if this is a 
 ### Load first, Compute Altogether
 
 We are looping over a single mma instruction, ie load 2 tiles, perform `mma` and repeat, this likely again is stalling TCs. Can we pipeline this part too?
+
+- Did tried this but doesn't give significant performance boost and apparently consumes extra registers, so not a gret RoI.
+
+### Incorporate Larger Tile sizes
+
+CUrrently we have hardcoded 128x16x128 tile size after the new warp layout setup. With A100's 164KBs SMEM, we can increase tile size per block while also allocating multiple stages and multiple blocks per SM.
+
+The 128x16x128 input tiles takes 16KBs memory (~52% of CuBLAS). And for K=32 takes 32KBs (~64% of CuBLAS) and K=64 takes 64kBs (~70% of CuBLAS).
+
+With 164KBs at our hold, we can increase M and N. With increase in tile size we need to remap the warps completely and potentially generalise them for experimenting with tile sizes.
