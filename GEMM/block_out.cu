@@ -158,8 +158,8 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
             ++fetch;
         }
 
-        uint32_t frag_A[TILES_PER_WARP_M][4];
-        uint32_t frag_B[TILES_PER_WARP_N][2];
+        uint32_t frag_A[4];
+        uint32_t frag_B[2];
         // wait until cur_stage data is fully in smem, then release the slot
         start = clock64();
         pipe.consumer_wait();
@@ -185,25 +185,22 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                 asm volatile(
                     "ldmatrix.sync.aligned.m8n8.x4.shared.b16 "
                     "{%0, %1, %2, %3}, [%4];\n"
-                    : "=r"(frag_A[i][0]), "=r"(frag_A[i][1]), "=r"(frag_A[i][2]), "=r"(frag_A[i][3]) // Outputs
+                    : "=r"(frag_A[0]), "=r"(frag_A[1]), "=r"(frag_A[2]), "=r"(frag_A[3]) // Outputs
                     : "r"(As_ptr_)                                                          // Input
                 );
-            }
+            
 #pragma unroll
-            for (int j = 0; j < TILES_PER_WARP_N; ++j) {
+                for (int j = 0; j < TILES_PER_WARP_N; ++j) {
 
-                int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
-                int b_col_base = warp_n*(BN/2) + (j * TILE_SIZE_N); // which N-tile
+                    int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
+                    int b_col_base = warp_n*(BN/2) + (j * TILE_SIZE_N); // which N-tile
+                    
+                    int swizzled_offset_B0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_col_base + group_id);
+                    int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
+
+                    frag_B[0] = __float_as_uint(Bs[cur_stage][swizzled_offset_B0]);
+                    frag_B[1] = __float_as_uint(Bs[cur_stage][swizzled_offset_B1]);
                 
-                int swizzled_offset_B0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_col_base + group_id);
-                int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
-
-                frag_B[j][0] = __float_as_uint(Bs[cur_stage][swizzled_offset_B0]);
-                frag_B[j][1] = __float_as_uint(Bs[cur_stage][swizzled_offset_B1]);
-            }
-#pragma unroll
-            for(int i=0; i<TILES_PER_WARP_M; ++i){
-                for(int j=0; j<TILES_PER_WARP_N; ++j){
                     
                     // compute using mma ptx
                     asm volatile(
@@ -216,8 +213,8 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                           "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 1]),
                           "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 2]),
                           "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 3])
-                        : "r"(frag_A[i][0]), "r"(frag_A[i][1]), "r"(frag_A[i][2]), "r"(frag_A[i][3]),
-                          "r"(frag_B[j][0]), "r"(frag_B[j][1])
+                        : "r"(frag_A[0]), "r"(frag_A[1]), "r"(frag_A[2]), "r"(frag_A[3]),
+                          "r"(frag_B[0]), "r"(frag_B[1])
                     );
                 }
             }
@@ -225,7 +222,9 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         computeTime += clock64() - start;
 
         pipe.consumer_release();   // free cur_stage slot for reuse by producer
+    
     }
+    
     if (threadIdx.x == 0) {
         int b = blockIdx.y * gridDim.x + blockIdx.x;
         dbg[3*b + 0] = waitTime;

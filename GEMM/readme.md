@@ -264,3 +264,32 @@ With 164KBs at our hold, we can increase M and N. With increase in tile size we 
 As expected, increasing tile sizes gets us back to 80% performance with the new warp layout. with `256x32x128` BMxBKxBN with same warp layout of 4x2, though now each tile takes 48KBs of SMEM and we are using double buffering, ie 96KBs SMEM and thats unfortunately means one block at a time in SM.
 
 Apparently using `256x32x64` gives us ~71% with 80KBs per block, ie just enough for 2 blocks being scheduled per SM, resulting in half the thread block waves.
+
+
+### Registers Reduction
+
+Also I came back to allocating only 4 and 2 registers for fragments of tile A and B respectively, as preallocating buffer of registers for whole of mma doesn't give any vital improvement and will only reduce occupancy and register spilling.
+
+## Warp Specialization
+
+Now since I cant use ncu on modal, i measured clock cycles of load and compute part:
+
+Correctness (GEMM_tc)            max_err = 2.27e-02  PASS
+
+cuBLAS           median   1.588 ms  min   1.399 ms  max   1.602 ms  |  108.17 TFLOPS
+
+DoubleBuffering2 median  10.822 ms  min  10.758 ms  max  10.928 ms  |   15.88 TFLOPS
+
+GEMM_tc          median   2.183 ms  min   2.178 ms  max   2.203 ms  |   78.69 TFLOPS
+
+avg wait cycles per block:    10966
+
+avg compute cycles per block: 154901
+
+wait / compute ratio:         0.071
+
+Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.73x
+
+Now, what i can see is compute block is bloated with clock cycles due to switching btw load, compute and indexing instructions (claude told me this) and this can be reduced by warp specialization. ATP, i would lay hands on and experiment with any optimizations.
+
+Also another thing that i think to improve (no claude didnt told me this) is to get stores to GMEM coalesced by first storing in SMEM.
