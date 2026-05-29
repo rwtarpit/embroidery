@@ -34,6 +34,20 @@ __device__ __forceinline__ int swizzle(int row, int col) {
     return row * COLS + col_swizzled;
 }
 
+template <int SwizzleLog2>
+__device__ inline dim3 gemm_swizzle(dim3 block_idx, dim3 grid_dim) {
+    // Treat the entire grid as a 1D linear block ID
+    int linear_id = block_idx.y * grid_dim.x + block_idx.x;
+
+    // Use bit-shifting based on the log2 of your swizzle width
+    // If SwizzleLog2 = 3, then (1 << 3) = 8 (equivalent to SWIZZLE_W = 8)
+    int block_x_swizzled = (linear_id & ((1 << SwizzleLog2) - 1)) + 
+                           (linear_id / ((1 << SwizzleLog2) * grid_dim.y)) * (1 << SwizzleLog2);
+    
+    int block_y_swizzled = (linear_id >> SwizzleLog2) % grid_dim.y;
+
+    return dim3(block_x_swizzled, block_y_swizzled, block_idx.z);
+}
 
 
 namespace wt {
@@ -78,6 +92,11 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
     // pipeline shared state 
     __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, NUM_STAGES> pipe_state;
     auto pipe = cuda::make_pipeline(block, &pipe_state);
+
+    //dim3 swizzled_id = gemm_swizzle<3>(blockIdx, gridDim);
+
+    //int tile_col = swizzled_id.x;
+    //int tile_row = swizzled_id.y;
 
     int tile_col = blockIdx.x;
     int tile_row = blockIdx.y;
@@ -139,8 +158,8 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
             ++fetch;
         }
 
-        uint32_t frag_A[2][4];
-        uint32_t frag_B[8][2];
+        uint32_t frag_A[TILES_PER_WARP_M][4];
+        uint32_t frag_B[TILES_PER_WARP_N][2];
         // wait until cur_stage data is fully in smem, then release the slot
         start = clock64();
         pipe.consumer_wait();
