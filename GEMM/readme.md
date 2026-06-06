@@ -331,3 +331,9 @@ kernel without swizzled B loads = 392k cycles
 
 this means swizzle is working as it is intended to be but the instruction phase for swizzled B loads is inflated.
 need to address instruction reuse and cache.
+
+and apparently this issue may also persist in A loads as well, so we may need to revamp the swizzle utilities completely for better instruction issues
+
+### Instruction Reuse
+
+As expected the instruction schedulers are getting swamped with redundant bitwise and arithmetic ops for computing swizzled addresses on B loads. after computing swizzle only once of base frag of a row, we use ptr for others and add address swizzle inline. this gives us 79 -> 83 TFLOPS and ~20k clock cycles save.
