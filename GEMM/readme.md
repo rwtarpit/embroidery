@@ -293,3 +293,41 @@ Speedup vs cuBLAS:  DoubleBuffering2 0.15x  |  GEMM_tc 0.73x
 Now, what i can see is compute block is bloated with clock cycles due to switching btw load, compute and indexing instructions (claude told me this) and this can be reduced by warp specialization. ATP, i would lay hands on and experiment with any optimizations.
 
 Also another thing that i think to improve (no claude didnt told me this) is to get stores to GMEM coalesced by first storing in SMEM.
+
+## B loads bottleneck
+
+For B loads from smem with this:
+
+```python
+    int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
+            int b_base = warp_n*(BN/2);
+
+            for (int j = 0; j < TILES_PER_WARP_N; ++j) {
+                int b_col_base = b_base + (j * TILE_SIZE_N); // which N-tile
+                
+                int swizzled_offset_B0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_col_base + group_id);
+                int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
+                //int swizzled_offset_B0  =0;
+                //int swizzled_offset_B1  =1;
+
+                frag_B[j][0] = __float_as_uint(Bs[cur_stage][swizzled_offset_B0]);
+                frag_B[j][1] = __float_as_uint(Bs[cur_stage][swizzled_offset_B1]);
+                
+               //frag_B[j][0] = 0;
+               //frag_B[j][1] = 0;
+                
+            }
+```
+
+After using `clock64()` in various combinations, it is clear that this is a formidable bottleneck as :
+
+(not accounting for correctness here)(256x128 tile)
+
+normal kernel : 370K cycles for compute phase
+
+kernel with B loads = constant (=0,0) : 276k cycles
+
+kernel without swizzled B loads = 392k cycles
+
+this means swizzle is working as it is intended to be but the instruction phase for swizzled B loads is inflated.
+need to address instruction reuse and cache.
