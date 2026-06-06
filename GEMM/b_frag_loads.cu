@@ -198,6 +198,12 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
             int base0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_base + group_id);
             int base1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_base + group_id);
 
+            int base0_prefix = base0 & ~((BN/4 - 1) << 2);
+            int base1_prefix = base1 & ~((BN/4 - 1) << 2);
+
+            int base0_chunk = base0 >> 2;
+            int base1_chunk = base1 >> 2;
+
             for (int j = 0; j < TILES_PER_WARP_N; ++j) {
                 int b_col_base = b_base + (j * TILE_SIZE_N); // which N-tile
                 
@@ -205,8 +211,8 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                 //int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
 
                 int chunk_step = (j * TILE_SIZE_N) >> 2;
-                int swizzled_offset_B0 = (base0 & ~((BN/4 - 1) << 2)) | (((base0 >> 2) ^ chunk_step) << 2);
-                int swizzled_offset_B1 = (base1 & ~((BN/4 - 1) << 2)) | (((base1 >> 2) ^ chunk_step) << 2);
+                int swizzled_offset_B0 = base0_prefix | ((base0_chunk ^ chunk_step) << 2);
+                int swizzled_offset_B1 = base1_prefix | ((base1_chunk ^ chunk_step) << 2);
 
                 frag_B[j][0] = __float_as_uint(Bs[cur_stage][swizzled_offset_B0]);
                 frag_B[j][1] = __float_as_uint(Bs[cur_stage][swizzled_offset_B1]);
