@@ -1,5 +1,11 @@
 # Benchmarks
 
+## Best Performance till now
+
+`b_frag_loads.cu`
+
+81% of CuBLAS with 256x32x128 tile shape.
+
 ## Naive TF32 tiled GEMM kernel (#3c29edef7ad2a2377ab22bce009f5764e192e183)
 
 These initially are quick results without much detailing for baseline purpose. I will be logging more details below when i start to make substantial change or come across a new bottleneck or optimization method.
@@ -337,3 +343,8 @@ and apparently this issue may also persist in A loads as well, so we may need to
 ### Instruction Reuse
 
 As expected the instruction schedulers are getting swamped with redundant bitwise and arithmetic ops for computing swizzled addresses on B loads. after computing swizzle only once of base frag of a row, we use ptr for others and add address swizzle inline. this gives us 79 -> 83 TFLOPS and ~20k clock cycles save.
+
+### Update
+
+
+After reading SASS (with help of claude) it seems the HMMA instructions are getting scheduled and interleaved pretty decently with address compute instructions (IMAD and LOP). again with first time seeing SASS its hard for me to reason about anything and trust AI completely. With no NCU and bloated clock64() analysis, its tough to find where this kernel is lagging. The actual gain was only 1TF when i removed the clock64() setup and also compared for differnt tile shapes.
