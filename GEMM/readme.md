@@ -348,3 +348,5 @@ As expected the instruction schedulers are getting swamped with redundant bitwis
 
 
 After reading SASS (with help of claude) it seems the HMMA instructions are getting scheduled and interleaved pretty decently with address compute instructions (IMAD and LOP). again with first time seeing SASS its hard for me to reason about anything and trust AI completely. With no NCU and bloated clock64() analysis, its tough to find where this kernel is lagging. The actual gain was only 1TF when i removed the clock64() setup and also compared for differnt tile shapes.
+
+I tried using warp shuffles to load B with ldmatrix but 4 warp shuffles takes much time and instructions than simply loading B tile with manual loads. and on top of that MMA layout for B tile inherently demands either to load B from SMEM transposed or use warp shuffles after x2 ldmatrix, both of which degrades performance.
