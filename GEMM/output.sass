@@ -21,48 +21,48 @@ gemm_ref.cu(110): warning #20054-D: dynamic initialization is not supported for 
                                                                                   ^
           detected during instantiation of "void runSgemmDoubleBuffering2<BM,BN,BK,WM,WN,WNITER,TM,TN,NUM_THREADS>(int, int, int, float, float *, float *, float, float *) [with BM=128, BN=128, BK=16, WM=64, WN=64, WNITER=4, TM=4, TN=4, NUM_THREADS=128]" at line 132 of benchmark.cu
 
-gemm_swizzle.cu(208): warning #177-D: variable "b_col_base" was declared but never referenced
+gemm_swizzle.cu(195): warning #177-D: variable "b_col_base" was declared but never referenced
                   int b_col_base = b_base + (j * 8);
                       ^
 
-gemm_swizzle.cu(86): warning #177-D: variable "profiler" was declared but never referenced
+gemm_swizzle.cu(72): warning #177-D: variable "profiler" was declared but never referenced
       bool profiler = (threadIdx.x == 0);
            ^
 
-gemm_swizzle.cu(87): warning #177-D: variable "computeTime" was declared but never referenced
+gemm_swizzle.cu(73): warning #177-D: variable "computeTime" was declared but never referenced
       long long computeTime = 0, b_time = 0, a_time = 0, mma_time = 0;
                 ^
 
-gemm_swizzle.cu(87): warning #177-D: variable "b_time" was declared but never referenced
+gemm_swizzle.cu(73): warning #177-D: variable "b_time" was declared but never referenced
       long long computeTime = 0, b_time = 0, a_time = 0, mma_time = 0;
                                  ^
 
-gemm_swizzle.cu(87): warning #177-D: variable "a_time" was declared but never referenced
+gemm_swizzle.cu(73): warning #177-D: variable "a_time" was declared but never referenced
       long long computeTime = 0, b_time = 0, a_time = 0, mma_time = 0;
                                              ^
 
-gemm_swizzle.cu(87): warning #177-D: variable "mma_time" was declared but never referenced
+gemm_swizzle.cu(73): warning #177-D: variable "mma_time" was declared but never referenced
       long long computeTime = 0, b_time = 0, a_time = 0, mma_time = 0;
                                                          ^
 
-gemm_swizzle.cu(94): warning #177-D: variable "start" was declared but never referenced
+gemm_swizzle.cu(80): warning #177-D: variable "start" was declared but never referenced
       long long start;
                 ^
 
-gemm_swizzle.cu(95): warning #177-D: variable "time" was declared but never referenced
+gemm_swizzle.cu(81): warning #177-D: variable "time" was declared but never referenced
       long long time;
                 ^
 
-gemm_swizzle.cu(100): warning #20054-D: dynamic initialization is not supported for a function-scope static __shared__ variable within a __device__/__global__ function
+gemm_swizzle.cu(86): warning #20054-D: dynamic initialization is not supported for a function-scope static __shared__ variable within a __device__/__global__ function
       __attribute__((shared)) cuda::pipeline_shared_state<cuda::thread_scope_block, NUM_STAGES> pipe_state;
                                                                                                 ^
-          detected during instantiation of "void GEMM_tc<BM,BN,BK,NUM_THREADS,ACCUM_SIZE,NUM_STAGES>(float *, float *, float *, long long *, int, int, int) [with BM=128U, BN=128U, BK=32U, NUM_THREADS=256U, ACCUM_SIZE=64U, NUM_STAGES=2U]" at line 143 of benchmark.cu
+          detected during instantiation of "void GEMM_tc<BM,BN,BK,NUM_THREADS,ACCUM_SIZE,NUM_STAGES>(float *, float *, float *, long long *, int, int, int) [with BM=128U, BN=128U, BK=16U, NUM_THREADS=256U, ACCUM_SIZE=64U, NUM_STAGES=2U]" at line 143 of benchmark.cu
 
 ptxas info    : 0 bytes gmem
-ptxas info    : Compiling entry function '_Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii' for 'sm_80'
-ptxas info    : Function properties for _Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii
+ptxas info    : Compiling entry function '_Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii' for 'sm_80'
+ptxas info    : Function properties for _Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii
     0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
-ptxas info    : Used 124 registers, 65664 bytes smem, 396 bytes cmem[0]
+ptxas info    : Used 121 registers, 32896 bytes smem, 396 bytes cmem[0], 8 bytes cmem[2]
 ptxas info    : Compiling entry function '_Z24runSgemmDoubleBuffering2ILi128ELi128ELi16ELi64ELi64ELi4ELi4ELi4ELi128EEviiifPfS0_fS0_' for 'sm_80'
 ptxas info    : Function properties for _Z24runSgemmDoubleBuffering2ILi128ELi128ELi16ELi64ELi64ELi4ELi4ELi4ELi128EEviiifPfS0_fS0_
     0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
@@ -78,392 +78,385 @@ ptxas info    : Used 198 registers, 32784 bytes smem, 400 bytes cmem[0]
 	.elftype	@"ET_EXEC"
 
 
-//--------------------- .text._Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii --------------------------
-	.section	.text._Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii,"ax",@progbits
+//--------------------- .text._Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii --------------------------
+	.section	.text._Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii,"ax",@progbits
 	.sectionflags	@"SHF_BARRIERS=1"
-	.sectioninfo	@"SHI_REGISTERS=124"
+	.sectioninfo	@"SHI_REGISTERS=121"
 	.align	128
-        .global         _Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii
-        .type           _Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii,@function
-        .size           _Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii,(.L_x_46 - _Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii)
-        .other          _Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii,@"STO_CUDA_ENTRY STV_DEFAULT"
-_Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii:
-.text._Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii:
-	//## File "/root/gemm_swizzle.cu", line 85
+        .global         _Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii
+        .type           _Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii,@function
+        .size           _Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii,(.L_x_46 - _Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii)
+        .other          _Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii,@"STO_CUDA_ENTRY STV_DEFAULT"
+_Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii:
+.text._Z7GEMM_tcILj128ELj128ELj16ELj256ELj64ELj2EEvPfS0_S0_Pxiii:
+	//## File "/root/gemm_swizzle.cu", line 71
         /*0000*/                   IMAD.MOV.U32 R1, RZ, RZ, c[0x0][0x28] ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0010*/                   IMAD.MOV.U32 R7, RZ, RZ, c[0x0][0x10] ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*0020*/                   I2F.U32.RP R8, c[0x0][0x10] ;
+	//## File "/root/gemm_swizzle.cu", line 89
+        /*0030*/                   S2R R6, SR_CTAID.Y ;
+        /*0040*/                   UMOV UR6, 0x1 ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0050*/                   IMAD.SHL.U32 R7, R7, 0x8, RZ ;
+        /*0060*/                   ULDC.64 UR4, c[0x2][0x0] ;
+	//## File "/root/gemm_swizzle.cu", line 89
+        /*0070*/                   S2R R9, SR_CTAID.X ;
+        /*0080*/                   ULDC.64 UR8, c[0x0][0x18] ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0090*/                   IMAD.MOV R11, RZ, RZ, -R7 ;
+        /*00a0*/                   I2F.U32.RP R0, R7 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cooperative_groups/details/helpers.h", line 97
-        /*0010*/                   S2R R0, SR_TID.Z ;
-        /*0020*/                   ULDC.64 UR10, c[0x0][0x118] ;
-        /*0030*/                   BSSY B0, `(.L_x_0) ;
-        /*0040*/                   IMAD.MOV.U32 R120, RZ, RZ, c[0x0][0x18] ;
-        /*0050*/                   S2R R3, SR_TID.Y ;
-        /*0060*/                   IMAD.MOV.U32 R121, RZ, RZ, c[0x0][0x1c] ;
-        /*0070*/                   S2R R109, SR_TID.X ;
+        /*00b0*/                   S2R R100, SR_TID.X ;
+        /*00c0*/                   UIMAD.WIDE.U32 UR4, UR6, UR8, UR4 ;
+        /*00d0*/                   BSSY B0, `(.L_x_0) ;
+        /*00e0*/                   UIMAD UR6, UR6, UR9, URZ ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*00f0*/                   ISETP.NE.U32.AND P1, PT, RZ, c[0x0][0x10], PT ;
+        /*0100*/                   ULDC.64 UR8, c[0x0][0x118] ;
+        /*0110*/                   MUFU.RCP R8, R8 ;
+        /*0120*/                   UIADD3 UR6, UR5, UR6, URZ ;
+        /*0130*/                   IMAD.U32 R117, RZ, RZ, UR5 ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0140*/                   ISETP.NE.U32.AND P0, PT, R7, RZ, PT ;
+        /*0150*/                   IMAD.U32 R116, RZ, RZ, UR4 ;
+        /*0160*/                   IMAD.U32 R117, RZ, RZ, UR6 ;
+        /*0170*/                   MUFU.RCP R0, R0 ;
+	//## File "/root/gemm_swizzle.cu", line 89
+        /*0180*/                   IMAD R6, R6, c[0x0][0xc], R9 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*0190*/                   IADD3 R4, R8, 0xffffffe, RZ ;
+        /*01a0*/                   F2I.FTZ.U32.TRUNC.NTZ R5, R4 ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*01b0*/                   IADD3 R2, R0, 0xffffffe, RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cooperative_groups/details/helpers.h", line 97
+        /*01c0*/                   S2R R0, SR_TID.Z ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*01d0*/                   F2I.FTZ.U32.TRUNC.NTZ R3, R2 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*01e0*/                   IMAD.MOV R4, RZ, RZ, -R5 ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*01f0*/                   IMAD.MOV.U32 R2, RZ, RZ, RZ ;
+        /*0200*/                   IMAD R11, R11, R3, RZ ;
+        /*0210*/                   IMAD.HI.U32 R9, R3, R11, R2 ;
+        /*0220*/                   SHF.R.S32.HI R3, RZ, 0x1f, R6 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cooperative_groups/details/helpers.h", line 97
+        /*0230*/                   S2R R11, SR_TID.Y ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0240*/                   LEA.HI R2, R3, R6.reuse, RZ, 0x3 ;
+        /*0250*/                   IMAD.HI.U32 R8, R9, R6, RZ ;
+        /*0260*/                   SHF.R.S32.HI R114, RZ, 0x3, R2 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*0270*/                   IMAD R9, R4, c[0x0][0x10], RZ ;
+        /*0280*/                   IMAD.MOV.U32 R4, RZ, RZ, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0290*/                   IMAD.MOV R3, RZ, RZ, -R8 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*02a0*/                   IMAD.HI.U32 R5, R5, R9, R4 ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*02b0*/                   IMAD R4, R7, R3, R6 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*02c0*/                   IMAD.HI.U32 R5, R5, R114, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*02d0*/                   ISETP.GE.U32.AND P3, PT, R4, R7, PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cooperative_groups/details/helpers.h", line 79
-        /*0080*/                   IMAD R0, R0, c[0x0][0x4], R3 ;
-        /*0090*/                   IMAD R0, R0, c[0x0][0x0], RZ ;
+        /*02e0*/                   IMAD R0, R0, c[0x0][0x4], R11 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*02f0*/                   IMAD.MOV R5, RZ, RZ, -R5 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cooperative_groups/details/helpers.h", line 79
+        /*0300*/                   IMAD R0, R0, c[0x0][0x0], RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 281
-        /*00a0*/                   IMAD.MOV R3, RZ, RZ, -R109 ;
-        /*00b0*/                   ISETP.NE.AND P0, PT, R0, R3, PT ;
-        /*00c0*/               @P0 BRA `(.L_x_1) ;
+        /*0310*/                   IMAD.MOV R3, RZ, RZ, -R100 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*0320*/                   IMAD R114, R5, c[0x0][0x10], R114 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 281
+        /*0330*/                   ISETP.NE.AND P5, PT, R0, R3, PT ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0340*/               @P3 IMAD.IADD R4, R4, 0x1, -R7 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*0350*/                   ISETP.GE.U32.AND P4, PT, R114, c[0x0][0x10], PT ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0360*/                   ISETP.GE.U32.AND P2, PT, R4, R7, PT ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*0370*/               @P4 IADD3 R114, R114, -c[0x0][0x10], RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 281
+        /*0380*/               @P5 BRA `(.L_x_1) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cooperative_groups/details/helpers.h", line 92
-        /*00d0*/                   IMAD.MOV.U32 R0, RZ, RZ, c[0x0][0x4] ;
-        /*00e0*/                   IMAD R0, R0, c[0x0][0x0], RZ ;
-        /*00f0*/                   IMAD R3, R0, c[0x0][0x8], RZ ;
+        /*0390*/                   IMAD.MOV.U32 R0, RZ, RZ, c[0x0][0x4] ;
+        /*03a0*/                   IMAD R0, R0, c[0x0][0x0], RZ ;
+        /*03b0*/                   IMAD R3, R0, c[0x0][0x8], RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 169
-        /*0100*/                   IADD3 R4, -R3.reuse, 0x40000000, RZ ;
-        /*0110*/                   IADD3 R5, -R3, -0x80000000, RZ ;
-        /*0120*/                   STS.64 [0x8], R4 ;
-        /*0130*/                   STS.64 [RZ], R4 ;
-        /*0140*/                   STS.64 [0x18], R4 ;
-        /*0150*/                   STS.64 [0x10], R4 ;
+        /*03c0*/                   IADD3 R4, -R3.reuse, 0x40000000, RZ ;
+        /*03d0*/                   IADD3 R5, -R3, -0x80000000, RZ ;
+        /*03e0*/                   STS.64 [0x8], R4 ;
+        /*03f0*/                   STS.64 [RZ], R4 ;
+        /*0400*/                   STS.64 [0x18], R4 ;
+        /*0410*/                   STS.64 [0x10], R4 ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/support/atomic/atomic_cuda_generated.h", line 97
-        /*0160*/                   ST.E.STRONG.SM [R120.64+0x20], R3 ;
+        /*0420*/                   ST.E.STRONG.SM [R116.64], R3 ;
 .L_x_1:
-        /*0170*/                   BSYNC B0 ;
+        /*0430*/                   BSYNC B0 ;
 .L_x_0:
-	//## File "/root/gemm_swizzle.cu", line 132
-        /*0180*/                   IMAD.MOV.U32 R98, RZ, RZ, c[0x0][0x188] ;
+	//## File "/root/gemm_swizzle.cu", line 119
+        /*0440*/                   ULDC UR5, c[0x0][0x188] ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0450*/               @P3 IADD3 R8, R8, 0x1, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 119
+        /*0460*/                   USHF.R.U32.HI UR5, URZ, 0x4, UR5 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_30_intrinsics.hpp", line 98
-        /*0190*/                   BAR.SYNC 0x0 ;
-	//## File "/root/gemm_swizzle.cu", line 132
-        /*01a0*/                   SHF.R.U32.HI R117, RZ, 0x5, R98 ;
-	//## File "/root/gemm_swizzle.cu", line 117
-        /*01b0*/                   LOP3.LUT R118, R109, 0x3, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 139
-        /*01c0*/                   ISETP.NE.AND P0, PT, R117, RZ, PT ;
-        /*01d0*/              @!P0 BRA `(.L_x_2) ;
-	//## File "/root/gemm_swizzle.cu", line 109
-        /*01e0*/                   S2UR UR4, SR_CTAID.Y ;
-	//## File "/root/gemm_swizzle.cu", line 123
-        /*01f0*/                   ULDC UR6, c[0x0][0x188] ;
-	//## File "/root/gemm_swizzle.cu", line 115
-        /*0200*/                   LOP3.LUT R116, R109.reuse, 0x1f, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 114
-        /*0210*/                   SHF.R.U32.HI R0, RZ, 0x5, R109.reuse ;
+        /*0470*/                   BAR.SYNC 0x0 ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*0480*/               @P2 IADD3 R8, R8, 0x1, RZ ;
+        /*0490*/              @!P0 LOP3.LUT R8, RZ, R7, RZ, 0x33, !PT ;
 	//## File "/root/gemm_swizzle.cu", line 126
-        /*0220*/                   SHF.R.U32.HI R6, RZ, 0x3, R109 ;
-	//## File "/root/gemm_swizzle.cu", line 108
-        /*0230*/                   S2UR UR5, SR_CTAID.X ;
-	//## File "/root/gemm_swizzle.cu", line 127
-        /*0240*/                   LOP3.LUT R7, R109, 0x7, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 123
-        /*0250*/                   UIMAD UR4, UR4, UR6, URZ ;
-        /*0260*/                   USHF.L.U32 UR4, UR4, 0x7, URZ ;
-	//## File "/root/gemm_swizzle.cu", line 124
-        /*0270*/                   USHF.L.U32 UR5, UR5, 0x7, URZ ;
+        /*04a0*/                   ISETP.NE.AND P0, PT, RZ, UR5, PT ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*04b0*/                   ISETP.GE.U32.AND P4, PT, R114, c[0x0][0x10], PT ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*04c0*/                   LOP3.LUT R3, R2, 0x1fffff8, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 102
+        /*04d0*/                   LOP3.LUT R112, R100, 0x1f, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 92
+        /*04e0*/                   IMAD.IADD R3, R6, 0x1, -R3 ;
+        /*04f0*/                   IMAD R3, R8, 0x8, R3 ;
+	//## File "/root/gemm_swizzle.cu", line 93
+        /*0500*/               @P4 IADD3 R114, R114, -c[0x0][0x10], RZ ;
+        /*0510*/              @!P1 LOP3.LUT R114, RZ, c[0x0][0x10], RZ, 0x33, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 111
+        /*0520*/                   IMAD.SHL.U32 R110, R3, 0x80, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 126
+        /*0530*/              @!P0 BRA `(.L_x_2) ;
+	//## File "/root/gemm_swizzle.cu", line 110
+        /*0540*/                   IMAD R2, R114, c[0x0][0x188], RZ ;
+	//## File "/root/gemm_swizzle.cu", line 104
+        /*0550*/                   LOP3.LUT R0, R100, 0x3, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 101
+        /*0560*/                   SHF.R.U32.HI R113, RZ, 0x5, R100.reuse ;
+	//## File "/root/gemm_swizzle.cu", line 110
+        /*0570*/                   IMAD.SHL.U32 R6, R2, 0x80, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 113
+        /*0580*/                   SHF.R.U32.HI R111, RZ, 0x2, R100 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/chrono.h", line 35
-        /*0280*/                   CS2R R2, SR_GLOBALTIMERLO ;
+        /*0590*/                   CS2R R2, SR_GLOBALTIMERLO ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 373
-        /*0290*/                   LDS R4, [0xc] ;
-        /*02a0*/                   LOP3.LUT P0, RZ, R4, 0x80000000, RZ, 0xc, !PT ;
-        /*02b0*/                   NOP ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 654
-        /*02c0*/                   UMOV UR12, 0x1 ;
+        /*05a0*/                   LDS R4, [0xc] ;
+        /*05b0*/                   LOP3.LUT P0, RZ, R4, 0x80000000, RZ, 0xc, !PT ;
+        /*05c0*/                   NOP ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/chrono.h", line 35
-        /*02d0*/                   IMAD.MOV.U32 R8, RZ, RZ, RZ ;
+        /*05d0*/                   IMAD.MOV.U32 R8, RZ, RZ, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 654
-        /*02e0*/               @P0 BRA `(.L_x_3) ;
+        /*05e0*/                   IMAD.MOV.U32 R115, RZ, RZ, 0x1 ;
+        /*05f0*/               @P0 BRA `(.L_x_3) ;
 .L_x_7:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 656
-        /*02f0*/                   ISETP.GE.AND P0, PT, R8, 0x10, PT ;
-        /*0300*/              @!P0 BRA `(.L_x_4) ;
+        /*0600*/                   ISETP.GE.AND P0, PT, R8, 0x10, PT ;
+        /*0610*/              @!P0 BRA `(.L_x_4) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/chrono.h", line 35
-        /*0310*/                   CS2R R4, SR_GLOBALTIMERLO ;
+        /*0620*/                   CS2R R4, SR_GLOBALTIMERLO ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1284
-        /*0320*/                   IADD3 R9, P0, -R2, R4, RZ ;
-        /*0330*/                   IMAD.X R5, R5, 0x1, ~R3, P0 ;
+        /*0630*/                   IADD3 R7, P0, -R2, R4, RZ ;
+        /*0640*/                   IMAD.X R5, R5, 0x1, ~R3, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1213
-        /*0340*/                   ISETP.GE.U32.AND P0, PT, R9, 0x3d0900, PT ;
-        /*0350*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
+        /*0650*/                   ISETP.GE.U32.AND P0, PT, R7, 0x3d0900, PT ;
+        /*0660*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 667
-        /*0360*/              @!P0 BRA `(.L_x_5) ;
+        /*0670*/              @!P0 BRA `(.L_x_5) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 310
-        /*0370*/                   NANOSLEEP 0xf4240 ;
+        /*0680*/                   NANOSLEEP 0xf4240 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 668
-        /*0380*/                   BRA `(.L_x_6) ;
+        /*0690*/                   BRA `(.L_x_6) ;
 .L_x_5:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1213
-        /*0390*/                   ISETP.GE.U32.AND P0, PT, R9, 0x9c40, PT ;
-        /*03a0*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
+        /*06a0*/                   ISETP.GE.U32.AND P0, PT, R7, 0x9c40, PT ;
+        /*06b0*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 669
-        /*03b0*/              @!P0 BRA `(.L_x_6) ;
+        /*06c0*/              @!P0 BRA `(.L_x_6) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1332
-        /*03c0*/                   SHF.R.S32.HI R4, RZ, 0x1f, R5 ;
-        /*03d0*/                   LEA.HI R4, P0, R4, R9, RZ, 0x2 ;
-        /*03e0*/                   IMAD.X R5, RZ, RZ, R5, P0 ;
-        /*03f0*/                   SHF.R.U64 R4, R4, 0x2, R5 ;
+        /*06d0*/                   SHF.R.S32.HI R4, RZ, 0x1f, R5 ;
+        /*06e0*/                   LEA.HI R4, P0, R4, R7, RZ, 0x2 ;
+        /*06f0*/                   IMAD.X R5, RZ, RZ, R5, P0 ;
+        /*0700*/                   SHF.R.U64 R4, R4, 0x2, R5 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 310
-        /*0400*/                   NANOSLEEP R4 ;
+        /*0710*/                   NANOSLEEP R4 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 670
-        /*0410*/                   BRA `(.L_x_6) ;
+        /*0720*/                   BRA `(.L_x_6) ;
 .L_x_4:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 659
-        /*0420*/                   IADD3 R8, R8, 0x1, RZ ;
+        /*0730*/                   IADD3 R8, R8, 0x1, RZ ;
 .L_x_6:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 373
-        /*0430*/                   LDS R4, [0xc] ;
-        /*0440*/                   LOP3.LUT P0, RZ, R4, 0x80000000, RZ, 0xc, !PT ;
-        /*0450*/                   NOP ;
+        /*0740*/                   LDS R4, [0xc] ;
+        /*0750*/                   LOP3.LUT P0, RZ, R4, 0x80000000, RZ, 0xc, !PT ;
+        /*0760*/                   NOP ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 654
-        /*0460*/              @!P0 BRA `(.L_x_7) ;
-        /*0470*/                   UMOV UR12, 0x1 ;
+        /*0770*/              @!P0 BRA `(.L_x_7) ;
+        /*0780*/                   IMAD.MOV.U32 R115, RZ, RZ, 0x1 ;
 .L_x_3:
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*0480*/                   LOP3.LUT R5, R109, 0x7, R6.reuse, 0x48, !PT ;
-        /*0490*/                   IMAD.SHL.U32 R3, R7.reuse, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 74
-        /*04a0*/                   IADD3 R2, R0.reuse, 0x8, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*04b0*/                   IMAD.SHL.U32 R103, R7, 0x4, RZ ;
-        /*04c0*/                   LOP3.LUT R7, R109.reuse, 0x7, R6, 0x48, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*04d0*/                   S2R R10, SR_LANEID ;
-	//## File "/root/gemm_swizzle.cu", line 74
-        /*04e0*/                   IADD3 R4, R0, 0x10, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*04f0*/                   IMAD R8, R6.reuse, 0x8, R5 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*0500*/                   LOP3.LUT R5, R109.reuse, 0x1f, R2, 0x48, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0510*/                   IMAD R106, R6, 0x8, R7 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*0520*/                   LOP3.LUT R7, R109.reuse, 0x1f, R4, 0x48, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0530*/                   IMAD.SHL.U32 R93, R116, 0x4, RZ ;
+        /*0790*/                   S2R R4, SR_LANEID ;
+        /*07a0*/                   VOTE.ALL R17, PT, PT ;
+        /*07b0*/                   IMAD.SHL.U32 R2, R0, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 51
+        /*07c0*/                   IADD3 R5, R111, 0x40, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*07d0*/                   IMAD.MOV.U32 R8, RZ, RZ, c[0x0][0x188] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0540*/                   VOTE.ALL R24, PT, PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*0550*/                   IMAD R18, R2, 0x20, R5 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*0560*/                   LOP3.LUT R5, R109.reuse, 0x1f, R0.reuse, 0x48, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*0570*/                   IMAD R19, R4, 0x20, R7 ;
+        /*07e0*/                   FLO.U32 R3, R17 ;
+	//## File "/root/gemm_swizzle.cu", line 60
+        /*07f0*/                   IADD3 R7, R113, 0x8, RZ ;
+        /*0800*/                   IMAD.MOV.U32 R109, RZ, RZ, 0x1 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0810*/                   PRMT R101, RZ, 0x7610, R101 ;
+        /*0820*/                   IMAD.MOV.U32 R97, RZ, RZ, 0xf5 ;
+        /*0830*/                   CS2R R50, SRZ ;
+        /*0840*/                   CS2R R48, SRZ ;
+        /*0850*/                   CS2R R46, SRZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0580*/                   FLO.U32 R9, R24 ;
-	//## File "/root/gemm_swizzle.cu", line 74
-        /*0590*/                   IADD3 R4, R0, 0x18, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*05a0*/                   IMAD.SHL.U32 R7, R116, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*05b0*/                   LOP3.LUT R97, R109.reuse, 0x1f, R0, 0x48, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*05c0*/                   IMAD R17, R0.reuse, 0x20, R5 ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*05d0*/                   IADD3 R96, R0.reuse, 0x8, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 120
-        /*05e0*/                   IMAD.SHL.U32 R11, R0.reuse, 0x20, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*05f0*/                   LOP3.LUT R5, R109.reuse, 0x1f, R4, 0x48, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0600*/                   IMAD R2, R0.reuse, c[0x0][0x180], R7 ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0610*/                   IADD3 R92, R0.reuse, 0x10, RZ ;
-        /*0620*/                   IMAD R93, R0.reuse, c[0x0][0x180], R93 ;
-        /*0630*/                   LOP3.LUT R7, R109.reuse, 0x1f, R96, 0x48, !PT ;
-        /*0640*/                   IMAD R97, R0.reuse, 0x20, R97 ;
-        /*0650*/                   IADD3 R0, R0, 0x18, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*0660*/                   IMAD R3, R6, c[0x0][0x188], R3 ;
-	//## File "/root/gemm_swizzle.cu", line 120
-        /*0670*/                   LOP3.LUT R112, R109, 0xf, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*0680*/                   IMAD.MOV.U32 R98, RZ, RZ, c[0x0][0x188] ;
+        /*0860*/                   POPC R17, R17 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0870*/                   CS2R R44, SRZ ;
+        /*0880*/                   CS2R R74, SRZ ;
+        /*0890*/                   CS2R R72, SRZ ;
+        /*08a0*/                   CS2R R18, SRZ ;
+        /*08b0*/                   CS2R R78, SRZ ;
+        /*08c0*/                   CS2R R76, SRZ ;
+        /*08d0*/                   CS2R R42, SRZ ;
+        /*08e0*/                   CS2R R40, SRZ ;
+        /*08f0*/                   CS2R R38, SRZ ;
+        /*0900*/                   CS2R R36, SRZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0690*/                   ISETP.EQ.U32.AND P0, PT, R9, R10, PT ;
+        /*0910*/                   ISETP.EQ.U32.AND P0, PT, R3, R4, PT ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*0920*/                   IMAD R3, R111, c[0x0][0x188], R2 ;
+	//## File "/root/gemm_swizzle.cu", line 32
+        /*0930*/                   LOP3.LUT R4, R100, 0x3, R5, 0x48, !PT ;
+        /*0940*/                   IMAD.SHL.U32 R2, R112, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0950*/                   CS2R R34, SRZ ;
+        /*0960*/                   CS2R R32, SRZ ;
+        /*0970*/                   CS2R R30, SRZ ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*06a0*/                   IMAD R20, R4, 0x20, R5 ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*06b0*/                   LOP3.LUT R5, R109, 0x1f, R0, 0x48, !PT ;
-        /*06c0*/                   IMAD R96, R96, 0x20, R7 ;
-	//## File "/root/gemm_swizzle.cu", line 120
-        /*06d0*/                   LOP3.LUT R112, R11, 0x60, R112, 0xe2, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*06e0*/                   IMAD R7, R98, 0x20, R3 ;
-        /*06f0*/                   IADD3 R11, P1, R3, UR4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0700*/                   IMAD.MOV.U32 R23, RZ, RZ, c[0x0][0x180] ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0710*/                   LOP3.LUT R9, R109, 0x1f, R92, 0x48, !PT ;
-        /*0720*/                   IMAD R88, R0, 0x20, R5 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0730*/                   IADD3 R0, P2, R2, UR5, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0740*/                   IMAD R103, R6, c[0x0][0x188], R103 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*0750*/                   IADD3 R12, P3, R7, UR4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0760*/                   IMAD R6, R23, 0x8, R2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0770*/                   POPC R24, R24 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*0780*/                   IMAD.X R14, RZ, RZ, RZ, P1 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0790*/                   LEA R2, P1, R11.reuse, c[0x0][0x160], 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*07a0*/                   IMAD R92, R92, 0x20, R9 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*07b0*/                   IADD3 R9, P4, R6, UR5, RZ ;
-        /*07c0*/                   IMAD.X R5, RZ, RZ, RZ, P2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*07d0*/                   LEA R10, P2, R0, c[0x0][0x168], 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*07e0*/                   IMAD.X R13, RZ, RZ, RZ, P3 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*07f0*/                   LEA R4, P3, R12, c[0x0][0x160], 0x2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0800*/                   IMAD R7, R98, 0x20, R7 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0810*/                   LEA.HI.X R3, R11, c[0x0][0x164], R14, 0x2, P1 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0820*/                   IMAD.X R14, RZ, RZ, RZ, P4 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0830*/                   LEA.HI.X R11, R0, c[0x0][0x16c], R5, 0x2, P2 ;
+        /*0980*/                   IMAD R13, R5, 0x4, R4 ;
+	//## File "/root/gemm_swizzle.cu", line 32
+        /*0990*/                   LOP3.LUT R4, R100, 0x1f, R7, 0x48, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*09a0*/                   IMAD R5, R8, 0x40, R3 ;
+        /*09b0*/                   IADD3 R8, P1, R6.reuse, R3, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*09c0*/                   IMAD R3, R113, c[0x0][0x180], R2 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*09d0*/                   CS2R R28, SRZ ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*0840*/                   IMAD R6, R23, 0x8, R6 ;
+        /*09e0*/                   IMAD R16, R7, 0x20, R4 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*09f0*/                   IADD3 R5, P2, R6, R5, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*0a00*/                   IMAD.MOV.U32 R4, RZ, RZ, c[0x0][0x180] ;
+        /*0a10*/                   IADD3 R9, P3, R110, R3, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*0a20*/                   IMAD.X R11, RZ, RZ, RZ, P1 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0850*/                   LEA.HI.X R5, R12, c[0x0][0x164], R13, 0x2, P3 ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*0860*/                   IMAD.SHL.U32 R0, R8, 0x4, RZ ;
+        /*0a30*/                   LEA R2, P1, R8, c[0x0][0x160], 0x2 ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*0a40*/                   IMAD R7, R4, 0x8, R3 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0a50*/                   CS2R R52, SRZ ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*0a60*/                   IMAD.X R10, RZ, RZ, RZ, P3 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0870*/                   LEA R12, P1, R9, c[0x0][0x168], 0x2 ;
+        /*0a70*/                   LEA.HI.X R3, R8, c[0x0][0x164], R11, 0x2, P1 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*0a80*/                   IMAD.X R14, RZ, RZ, RZ, P2 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*0a90*/                   LEA R6, P3, R9, c[0x0][0x168], 0x2 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0aa0*/                   CS2R R54, SRZ ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*0ab0*/                   IADD3 R12, P2, R110, R7, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0ac0*/                   CS2R R56, SRZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*0ad0*/                   LEA R4, P1, R5, c[0x0][0x160], 0x2 ;
+        /*0ae0*/                   SHF.R.U32.HI R8, RZ, 0x1, R100 ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*0af0*/                   IMAD.X R15, RZ, RZ, RZ, P2 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*0b00*/                   LEA.HI.X R7, R9, c[0x0][0x16c], R10, 0x2, P3 ;
+        /*0b10*/                   LEA.HI.X R5, R5, c[0x0][0x164], R14, 0x2, P1 ;
+	//## File "/root/gemm_swizzle.cu", line 108
+        /*0b20*/                   LOP3.LUT R9, R8, 0x7fffffc0, RZ, 0xc0, !PT ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*0b30*/                   LEA R8, P1, R12, c[0x0][0x168], 0x2 ;
+	//## File "/root/gemm_swizzle.cu", line 32
+        /*0b40*/                   LOP3.LUT R10, R100, 0x3, R111, 0x48, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0b50*/                   LEA.HI R108, R112, R9, RZ, 0x1e ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*0b60*/                   LEA.HI.X R9, R12, c[0x0][0x16c], R15, 0x2, P1 ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*0880*/                   IMAD R8, R23, 0x8, R6 ;
-	//## File "/root/gemm_swizzle.cu", line 116
-        /*0890*/                   SHF.R.U32.HI R116, RZ, 0x2, R116 ;
+        /*0b70*/                   IMAD R10, R111, 0x4, R10 ;
+	//## File "/root/gemm_swizzle.cu", line 32
+        /*0b80*/                   LOP3.LUT R12, R100, 0x1f, R113, 0x48, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0b90*/                   LEA R11, R0.reuse, 0x20, 0x2 ;
+        /*0ba0*/                   LEA R14, R0, 0x400, 0x7 ;
+	//## File "/root/gemm_swizzle.cu", line 34
+        /*0bb0*/                   IMAD.SHL.U32 R0, R10, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0bc0*/                   LOP3.LUT R11, R11, 0x7fffffc4, R108, 0x78, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 34
+        /*0bd0*/                   IMAD R12, R113, 0x20, R12 ;
+        /*0be0*/                   IMAD.SHL.U32 R10, R13, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0bf0*/                   LOP3.LUT R11, R11, 0x3, R108, 0xf8, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*08a0*/                   IMAD.SHL.U32 R21, R0, 0x4, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*08b0*/                   LEA.HI.X R13, R9, c[0x0][0x16c], R14, 0x2, P1 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*08c0*/                   IMAD R0, R98, 0x20, R7 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*08d0*/                   IADD3 R15, P1, R7, UR4, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*08e0*/                   IMAD.MOV R24, RZ, RZ, -R24 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*08f0*/                   IADD3 R9, P2, R6, UR5, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0900*/              @!PT LDS RZ, [RZ] ;
-        /*0910*/              @!PT LDS RZ, [RZ] ;
-        /*0920*/              @!PT LDS RZ, [RZ] ;
-        /*0930*/                   LDGSTS.E.BYPASS.128 [R21+0x80], [R2.64] ;
-        /*0940*/                   IMAD.MOV.U32 R115, RZ, RZ, 0x1 ;
-        /*0950*/                   SHF.R.U32.HI R113, RZ, 0x1, R109 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*0960*/                   IMAD.X R22, RZ, RZ, RZ, P1 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0970*/                   LEA R6, P1, R15, c[0x0][0x160], 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0980*/                   IMAD.X R16, RZ, RZ, RZ, P2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0990*/                   LEA R14, P2, R9, c[0x0][0x168], 0x2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*09a0*/                   LDGSTS.E.BYPASS.128 [R21+0x1080], [R4.64] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*09b0*/                   LEA.HI.X R7, R15, c[0x0][0x164], R22, 0x2, P1 ;
-        /*09c0*/                   IMAD.MOV.U32 R108, RZ, RZ, 0xf5 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*09d0*/                   IADD3 R0, P1, R0, UR4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*09e0*/                   CS2R R34, SRZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*09f0*/                   LEA.HI.X R15, R9, c[0x0][0x16c], R16, 0x2, P2 ;
+        /*0c00*/                   IMAD.SHL.U32 R13, R0, 0x4, RZ ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*0a00*/                   IMAD.SHL.U32 R2, R19, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0a10*/                   IADD3 R22, P2, R8, UR5, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*0a20*/                   IMAD.X R9, RZ, RZ, RZ, P1 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0a30*/                   LEA R8, P1, R0.reuse, c[0x0][0x160], 0x2 ;
+        /*0c10*/                   IMAD.SHL.U32 R0, R12, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0c20*/                   IMAD.IADD R20, R11, 0x1, R14 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0a40*/                   LDGSTS.E.BYPASS.128 [R21+0x2080], [R6.64] ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0a50*/                   PRMT R110, RZ, 0x7610, R110 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*0a60*/                   IMAD.X R23, RZ, RZ, RZ, P2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0a70*/                   LEA.HI.X R9, R0, c[0x0][0x164], R9, 0x2, P1 ;
+        /*0c30*/              @!PT LDS RZ, [RZ] ;
+        /*0c40*/              @!PT LDS RZ, [RZ] ;
+        /*0c50*/              @!PT LDS RZ, [RZ] ;
+        /*0c60*/                   LDGSTS.E.BYPASS.128 [R13+0x80], [R2.64] ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
+        /*0c70*/                   IMAD.SHL.U32 R15, R0, 0x4, RZ ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*0a80*/                   IMAD.SHL.U32 R0, R17, 0x4, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0a90*/                   LEA R16, P2, R22, c[0x0][0x168], 0x2 ;
+        /*0c80*/                   IMAD.SHL.U32 R0, R16, 0x4, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*0aa0*/                   IMAD.SHL.U32 R5, R2, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0ab0*/                   CS2R R32, SRZ ;
+        /*0c90*/                   IMAD.SHL.U32 R11, R10, 0x4, RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
+        /*0ca0*/                   IMAD.MOV R10, RZ, RZ, -R17 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*0ac0*/                   IMAD.SHL.U32 R3, R0, 0x4, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*0ad0*/                   LEA.HI.X R17, R22, c[0x0][0x16c], R23, 0x2, P2 ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*0ae0*/                   IMAD.SHL.U32 R0, R18, 0x4, RZ ;
+        /*0cb0*/                   IMAD.SHL.U32 R17, R0, 0x4, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0af0*/                   LDGSTS.E.BYPASS.128 [R21+0x3080], [R8.64] ;
+        /*0cc0*/                   LDGSTS.E.BYPASS.128 [R11+0x80], [R4.64] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0b00*/                   IMAD.MOV.U32 R2, RZ, RZ, R24 ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0b10*/                   CS2R R26, SRZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*0b20*/                   IMAD.SHL.U32 R19, R0, 0x4, RZ ;
+        /*0cd0*/                   IMAD.MOV.U32 R0, RZ, RZ, R10 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0ce0*/                   CS2R R12, SRZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0b30*/                   LDGSTS.E.BYPASS.128 [R3+0x8080], [R10.64] ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*0b40*/                   IMAD.SHL.U32 R0, R20, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0b50*/                   CS2R R24, SRZ ;
-        /*0b60*/                   CS2R R42, SRZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0b70*/                   LDGSTS.E.BYPASS.128 [R19+0x8080], [R12.64] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*0b80*/                   IMAD.SHL.U32 R7, R0, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0b90*/                   CS2R R40, SRZ ;
-        /*0ba0*/                   IMAD.MOV.U32 R0, RZ, RZ, c[0x0][0x180] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0bb0*/                   LDGSTS.E.BYPASS.128 [R5+0x8080], [R14.64] ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0bc0*/                   CS2R R74, SRZ ;
-        /*0bd0*/                   CS2R R72, SRZ ;
-        /*0be0*/                   CS2R R62, SRZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*0bf0*/                   LDGSTS.E.BYPASS.128 [R7+0x8080], [R16.64] ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0c00*/                   CS2R R60, SRZ ;
-        /*0c10*/                   CS2R R54, SRZ ;
-        /*0c20*/                   CS2R R52, SRZ ;
+        /*0cf0*/                   LDGSTS.E.BYPASS.128 [R15+0x4080], [R6.64] ;
+        /*0d00*/                   LDGSTS.E.BYPASS.128 [R17+0x4080], [R8.64] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0c30*/                   NOP ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0c40*/                   CS2R R18, SRZ ;
-        /*0c50*/                   CS2R R46, SRZ ;
-        /*0c60*/                   CS2R R44, SRZ ;
+        /*0d10*/                   NOP ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0d20*/                   CS2R R4, SRZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0c70*/               @P0 ATOMS.ADD.S32 RZ, [0x4], R2 ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0c80*/                   CS2R R30, SRZ ;
-        /*0c90*/                   CS2R R28, SRZ ;
-        /*0ca0*/                   CS2R R22, SRZ ;
+        /*0d30*/               @P0 ATOMS.ADD.S32 RZ, [0x4], R0 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0d40*/                   CS2R R6, SRZ ;
+        /*0d50*/                   CS2R R14, SRZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*0cb0*/              @!PT LDS RZ, [RZ] ;
-        /*0cc0*/              @!PT LDS RZ, [RZ] ;
-        /*0cd0*/              @!PT LDS RZ, [RZ] ;
-        /*0ce0*/              @!PT LDS RZ, [RZ] ;
-        /*0cf0*/                   ARRIVES.LDGSTSBAR.64 [URZ] ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0d00*/                   CS2R R16, SRZ ;
-        /*0d10*/                   CS2R R20, SRZ ;
-        /*0d20*/                   CS2R R14, SRZ ;
-        /*0d30*/                   CS2R R12, SRZ ;
-        /*0d40*/                   CS2R R38, SRZ ;
-        /*0d50*/                   CS2R R36, SRZ ;
-        /*0d60*/                   CS2R R48, SRZ ;
-        /*0d70*/                   CS2R R50, SRZ ;
-        /*0d80*/                   CS2R R56, SRZ ;
-        /*0d90*/                   CS2R R58, SRZ ;
-        /*0da0*/                   CS2R R64, SRZ ;
-        /*0db0*/                   CS2R R66, SRZ ;
+        /*0d60*/              @!PT LDS RZ, [RZ] ;
+        /*0d70*/              @!PT LDS RZ, [RZ] ;
+        /*0d80*/              @!PT LDS RZ, [RZ] ;
+        /*0d90*/              @!PT LDS RZ, [RZ] ;
+        /*0da0*/                   ARRIVES.LDGSTSBAR.64 [URZ] ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0db0*/                   CS2R R16, SRZ ;
         /*0dc0*/                   CS2R R8, SRZ ;
         /*0dd0*/                   CS2R R10, SRZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
@@ -471,1100 +464,843 @@ _Z7GEMM_tcILj128ELj128ELj32ELj256ELj64ELj2EEvPfS0_S0_Pxiii:
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/ptx/parallel_synchronization_and_communication_instructions_mbarrier.h", line 136
         /*0df0*/                   MEMBAR.ALL.CTA ;
         /*0e00*/                   ATOMS.ARRIVE.64 RZ, [URZ] ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0e10*/                   IMAD R93, R0, 0x8, R93 ;
-	//## File "/root/gemm_swizzle.cu", line 116
-        /*0e20*/                   LOP3.LUT R113, R116, 0x7fffffc0, R113, 0xf8, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0e30*/                   IMAD R102, R98, 0x20, R103 ;
-	//## File "/root/gemm_swizzle.cu", line 116
-        /*0e40*/                   LOP3.LUT R114, R116, 0x4, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 157
-        /*0e50*/                   IMAD.SHL.U32 R111, R112, 0x4, RZ ;
-        /*0e60*/                   UMOV UR4, URZ ;
-        /*0e70*/                   IMAD R99, R98, 0x20, R102 ;
-        /*0e80*/                   IMAD R89, R0, 0x8, R93 ;
-        /*0e90*/                   LOP3.LUT R111, R111, 0x1c, RZ, 0xc0, !PT ;
-        /*0ea0*/                   IMAD.SHL.U32 R106, R106, 0x4, RZ ;
-        /*0eb0*/                   IMAD.SHL.U32 R97, R97, 0x4, RZ ;
-        /*0ec0*/                   IMAD.SHL.U32 R96, R96, 0x4, RZ ;
-        /*0ed0*/                   IMAD.SHL.U32 R92, R92, 0x4, RZ ;
-        /*0ee0*/                   IMAD.SHL.U32 R88, R88, 0x4, RZ ;
-        /*0ef0*/                   IMAD R98, R98, 0x20, R99 ;
-        /*0f00*/                   IMAD R0, R0, 0x8, R89 ;
+	//## File "/root/gemm_swizzle.cu", line 103
+        /*0e10*/                   LOP3.LUT R20, R20, 0x7fffffef, RZ, 0xc0, !PT ;
+        /*0e20*/                   CS2R R58, SRZ ;
+        /*0e30*/                   CS2R R60, SRZ ;
+        /*0e40*/                   CS2R R62, SRZ ;
+        /*0e50*/                   CS2R R64, SRZ ;
+        /*0e60*/                   CS2R R66, SRZ ;
+        /*0e70*/                   LOP3.LUT R107, R20.reuse, 0x20, RZ, 0x3c, !PT ;
+        /*0e80*/                   UMOV UR4, URZ ;
+        /*0e90*/                   LOP3.LUT R106, R20, 0x28, RZ, 0x3c, !PT ;
+        /*0ea0*/                   LOP3.LUT R105, R20.reuse, 0x30, RZ, 0x3c, !PT ;
+        /*0eb0*/                   LOP3.LUT R104, R20, 0x38, RZ, 0x3c, !PT ;
 .L_x_20:
-        /*0f10*/                   ISETP.LE.AND P0, PT, R117, UR12, PT ;
-        /*0f20*/               @P0 BRA `(.L_x_8) ;
+	//## File "/root/gemm_swizzle.cu", line 144
+        /*0ec0*/                   ISETP.GE.AND P0, PT, R115, UR5, PT ;
+        /*0ed0*/               @P0 BRA `(.L_x_8) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 250
-        /*0f30*/                   IMAD.SHL.U32 R2, R115, 0x10, RZ ;
+        /*0ee0*/                   IMAD.SHL.U32 R0, R109, 0x10, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 140
+        /*0ef0*/                   LOP3.LUT R22, R115, 0x1, RZ, 0xc0, !PT ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 250
+        /*0f00*/                   LOP3.LUT R2, R0, 0xff0, RZ, 0xe2, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 171
-        /*0f40*/                   LOP3.LUT R82, R108, 0x1, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 153
-        /*0f50*/                   ULOP3.LUT UR9, UR12, 0x1, URZ, 0xc0, !UPT ;
+        /*0f10*/                   LOP3.LUT R0, R97, 0x1, RZ, 0xc0, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 250
-        /*0f60*/                   LOP3.LUT R2, R2, 0xff0, RZ, 0xe2, !PT ;
-        /*0f70*/                   R2UR UR14, R2 ;
+        /*0f20*/                   R2UR UR6, R2 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/chrono.h", line 35
-        /*0f80*/                   CS2R R2, SR_GLOBALTIMERLO ;
+        /*0f30*/                   CS2R R2, SR_GLOBALTIMERLO ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 373
-        /*0f90*/                   LDS R5, [UR14+0xc] ;
-        /*0fa0*/                   LOP3.LUT R68, R108, 0x1, RZ, 0xc0, !PT ;
-        /*0fb0*/                   IMAD.U32 R4, R68, -0x80000000, RZ ;
-        /*0fc0*/                   LOP3.LUT P0, RZ, R5, 0x80000000, R4, 0x48, !PT ;
-        /*0fd0*/                   NOP ;
-        /*0fe0*/                   IMAD.MOV.U32 R6, RZ, RZ, RZ ;
+        /*0f40*/                   LDS R21, [UR6+0xc] ;
+        /*0f50*/                   LOP3.LUT R25, R97, 0x1, RZ, 0xc0, !PT ;
+        /*0f60*/                   IMAD.U32 R20, R25, -0x80000000, RZ ;
+        /*0f70*/                   LOP3.LUT P0, RZ, R21, 0x80000000, R20, 0x48, !PT ;
+        /*0f80*/                   NOP ;
+        /*0f90*/                   IMAD.MOV.U32 R24, RZ, RZ, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 654
-        /*0ff0*/               @P0 BRA `(.L_x_9) ;
+        /*0fa0*/               @P0 BRA `(.L_x_9) ;
 .L_x_13:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 656
-        /*1000*/                   ISETP.GE.AND P0, PT, R6, 0x10, PT ;
-        /*1010*/              @!P0 BRA `(.L_x_10) ;
+        /*0fb0*/                   ISETP.GE.AND P0, PT, R24, 0x10, PT ;
+        /*0fc0*/              @!P0 BRA `(.L_x_10) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/chrono.h", line 35
-        /*1020*/                   CS2R R4, SR_GLOBALTIMERLO ;
+        /*0fd0*/                   CS2R R20, SR_GLOBALTIMERLO ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1284
-        /*1030*/                   IADD3 R7, P0, -R2, R4, RZ ;
-        /*1040*/                   IMAD.X R5, R5, 0x1, ~R3, P0 ;
+        /*0fe0*/                   IADD3 R23, P0, -R2, R20, RZ ;
+        /*0ff0*/                   IMAD.X R21, R21, 0x1, ~R3, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1213
-        /*1050*/                   ISETP.GE.U32.AND P0, PT, R7, 0x3d0900, PT ;
-        /*1060*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
+        /*1000*/                   ISETP.GE.U32.AND P0, PT, R23, 0x3d0900, PT ;
+        /*1010*/                   ISETP.GE.AND.EX P0, PT, R21, RZ, PT, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 667
-        /*1070*/              @!P0 BRA `(.L_x_11) ;
+        /*1020*/              @!P0 BRA `(.L_x_11) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 310
-        /*1080*/                   NANOSLEEP 0xf4240 ;
+        /*1030*/                   NANOSLEEP 0xf4240 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 668
-        /*1090*/                   BRA `(.L_x_12) ;
+        /*1040*/                   BRA `(.L_x_12) ;
 .L_x_11:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1213
-        /*10a0*/                   ISETP.GE.U32.AND P0, PT, R7, 0x9c40, PT ;
-        /*10b0*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
+        /*1050*/                   ISETP.GE.U32.AND P0, PT, R23, 0x9c40, PT ;
+        /*1060*/                   ISETP.GE.AND.EX P0, PT, R21, RZ, PT, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 669
-        /*10c0*/              @!P0 BRA `(.L_x_12) ;
+        /*1070*/              @!P0 BRA `(.L_x_12) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1332
-        /*10d0*/                   SHF.R.S32.HI R4, RZ, 0x1f, R5 ;
-        /*10e0*/                   LEA.HI R4, P0, R4, R7, RZ, 0x2 ;
-        /*10f0*/                   IMAD.X R5, RZ, RZ, R5, P0 ;
-        /*1100*/                   SHF.R.U64 R4, R4, 0x2, R5 ;
+        /*1080*/                   SHF.R.S32.HI R20, RZ, 0x1f, R21 ;
+        /*1090*/                   LEA.HI R20, P0, R20, R23, RZ, 0x2 ;
+        /*10a0*/                   IMAD.X R21, RZ, RZ, R21, P0 ;
+        /*10b0*/                   SHF.R.U64 R20, R20, 0x2, R21 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 310
-        /*1110*/                   NANOSLEEP R4 ;
+        /*10c0*/                   NANOSLEEP R20 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 670
-        /*1120*/                   BRA `(.L_x_12) ;
+        /*10d0*/                   BRA `(.L_x_12) ;
 .L_x_10:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 659
-        /*1130*/                   IADD3 R6, R6, 0x1, RZ ;
+        /*10e0*/                   IADD3 R24, R24, 0x1, RZ ;
 .L_x_12:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 373
-        /*1140*/                   LDS R4, [UR14+0xc] ;
-        /*1150*/                   IMAD.U32 R5, R68, -0x80000000, RZ ;
-        /*1160*/                   LOP3.LUT P0, RZ, R4, 0x80000000, R5, 0x48, !PT ;
-        /*1170*/                   NOP ;
+        /*10f0*/                   LDS R20, [UR6+0xc] ;
+        /*1100*/                   IMAD.U32 R21, R25, -0x80000000, RZ ;
+        /*1110*/                   LOP3.LUT P0, RZ, R20, 0x80000000, R21, 0x48, !PT ;
+        /*1120*/                   NOP ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 654
-        /*1180*/              @!P0 BRA `(.L_x_13) ;
+        /*1130*/              @!P0 BRA `(.L_x_13) ;
 .L_x_9:
-	//## File "/root/gemm_swizzle.cu", line 109
-        /*1190*/                   S2UR UR6, SR_CTAID.Y ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*11a0*/                   S2R R7, SR_LANEID ;
-	//## File "/root/gemm_swizzle.cu", line 123
-        /*11b0*/                   ULDC UR7, c[0x0][0x188] ;
+        /*1140*/                   S2R R20, SR_LANEID ;
+        /*1150*/                   VOTE.ALL R26, PT, PT ;
+	//## File "/root/gemm_swizzle.cu", line 110
+        /*1160*/                   IMAD R69, R114, c[0x0][0x188], RZ ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*1170*/                   IADD3 R70, R111, 0x40, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 151
+        /*1180*/                   IMAD.SHL.U32 R2, R115.reuse, 0x10, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*11c0*/                   VOTE.ALL R83, PT, PT ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*11d0*/                   USHF.L.U32 UR5, UR12, 0x5, URZ ;
-        /*11e0*/                   IMAD.SHL.U32 R2, R109, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 114
-        /*11f0*/                   SHF.R.U32.HI R5, RZ, 0x5, R109 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*1200*/                   FLO.U32 R6, R83 ;
-	//## File "/root/gemm_swizzle.cu", line 108
-        /*1210*/                   S2UR UR8, SR_CTAID.X ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 180
-        /*1220*/                   IADD3 R115, R115, 0x1, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*1230*/                   LOP3.LUT R2, R2, 0x7c, RZ, 0xc0, !PT ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*1240*/                   POPC R83, R83 ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*1250*/                   IMAD R2, R5, c[0x0][0x180], R2 ;
-	//## File "/root/gemm_swizzle.cu", line 123
-        /*1260*/                   UIMAD UR6, UR6, UR7, URZ ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*1270*/                   ULEA UR5, UP0, UR6, UR5, 0x7 ;
-        /*1280*/                   ULDC UR6, c[0x0][0x180] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*1290*/                   IMAD.MOV R83, RZ, RZ, -R83 ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*12a0*/                   UIADD3.X UR13, URZ, URZ, URZ, UP0, !UPT ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*12b0*/                   IADD3 R3, P0, R103, UR5, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*12c0*/                   UIMAD.WIDE UR6, UR12, UR6, URZ ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*12d0*/                   IADD3 R5, P4, R99, UR5, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 124
-        /*12e0*/                   USHF.L.U32 UR8, UR8, 0x7, URZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*12f0*/                   LEA R80, P1, R3.reuse, c[0x0][0x160], 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*1300*/                   IMAD.X R4, RZ, RZ, UR13, P0 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*1310*/                   ISETP.EQ.U32.AND P0, PT, R6, R7, PT ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*1320*/                   ULEA UR8, UP0, UR6, UR8, 0x5 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*1330*/                   IADD3 R7, P2, R98, UR5, RZ ;
-        /*1340*/                   IMAD.X R78, RZ, RZ, UR13, P4 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*1350*/                   LEA.HI.X R81, R3, c[0x0][0x164], R4, 0x2, P1 ;
-	//## File "/root/gemm_swizzle.cu", line 164
-        /*1360*/                   ULEA.HI.X UR6, UR6, URZ, UR7, 0x5, UP0 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*1370*/                   IADD3 R3, P3, R102, UR5, RZ ;
-        /*1380*/                   IMAD.X R76, RZ, RZ, UR13, P2 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*1390*/                   IADD3 R69, P1, R2, UR8, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*13a0*/                   USHF.L.U32 UR5, UR9, 0xe, URZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*13b0*/                   LEA R6, P2, R7, c[0x0][0x160], 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 68
-        /*13c0*/                   IMAD.X R84, RZ, RZ, UR13, P3 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*13d0*/                   LEA R2, P3, R3, c[0x0][0x160], 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*13e0*/                   IMAD.X R70, RZ, RZ, UR6, P1 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*13f0*/                   LEA R68, P1, R69, c[0x0][0x168], 0x2 ;
-        /*1400*/                   LEA.HI.X R7, R7, c[0x0][0x164], R76, 0x2, P2 ;
-        /*1410*/                   LEA.HI.X R3, R3, c[0x0][0x164], R84, 0x2, P3 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*1420*/                   IADD3 R71, P2, R93, UR8, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*1430*/                   LEA.HI.X R69, R69, c[0x0][0x16c], R70, 0x2, P1 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*1440*/                   IADD3 R77, P3, R89, UR8, RZ ;
-        /*1450*/                   IMAD.X R90, RZ, RZ, UR6, P2 ;
-        /*1460*/                   IADD3 R79, P1, R0, UR8, RZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*1470*/                   LEA R4, P4, R5, c[0x0][0x160], 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*1480*/                   IMAD.X R86, RZ, RZ, UR6, P3 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*1490*/                   LEA R101, R106, UR5, 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 77
-        /*14a0*/                   IMAD.X R84, RZ, RZ, UR6, P1 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*14b0*/                   LEA R70, P2, R71, c[0x0][0x168], 0x2 ;
-        /*14c0*/                   LEA.HI.X R5, R5, c[0x0][0x164], R78, 0x2, P4 ;
+        /*1190*/                   FLO.U32 R3, R26 ;
+	//## File "/root/gemm_swizzle.cu", line 151
+        /*11a0*/                   IMAD.WIDE R24, R115, c[0x0][0x180], RZ ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*11b0*/                   IADD3 R82, R113, 0x8, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 151
+        /*11c0*/                   LEA R69, P2, R69, R2, 0x7 ;
+        /*11d0*/                   IMAD.SHL.U32 R2, R100, 0x4, RZ ;
+        /*11e0*/                   LEA R83, P1, R24, R110, 0x4 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*14d0*/              @!PT LDS RZ, [RZ] ;
-        /*14e0*/              @!PT LDS RZ, [RZ] ;
+        /*11f0*/                   IMAD.MOV.U32 R68, RZ, RZ, c[0x0][0x180] ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*1200*/                   LOP3.LUT R23, R82, R100, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 151
+        /*1210*/                   IMAD.X R84, RZ, RZ, RZ, P2 ;
+        /*1220*/                   LEA.HI.X R24, R24, RZ, R25, 0x4, P1 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
+        /*1230*/                   IMAD.MOV.U32 R25, RZ, RZ, c[0x0][0x188] ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
+        /*1240*/                   POPC R26, R26 ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*1250*/                   IMAD.SHL.U32 R23, R23, 0x4, RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 180
+        /*1260*/                   IADD3 R109, R109, 0x1, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*1270*/                   LOP3.LUT R23, R23, 0x7c, RZ, 0xc0, !PT ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
+        /*1280*/                   ISETP.EQ.U32.AND P0, PT, R3, R20, PT ;
+	//## File "/root/gemm_swizzle.cu", line 151
+        /*1290*/                   LOP3.LUT R20, R2, 0xc, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*12a0*/                   IMAD R82, R82, 0x80, R23 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*12b0*/                   LOP3.LUT R3, R70, R100, RZ, 0x3c, !PT ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
+        /*12c0*/                   LOP3.LUT R2, R2, 0x7c, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 151
+        /*12d0*/                   IMAD R20, R111, c[0x0][0x188], R20 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*12e0*/                   IMAD.SHL.U32 R3, R3, 0x4, RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
+        /*12f0*/                   IMAD R21, R113, c[0x0][0x180], R2 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*1300*/                   IADD3 R27, P3, R20, R69, RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
+        /*1310*/                   IMAD R2, R25, 0x40, R20 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*1320*/                   LOP3.LUT R3, R3, 0xc, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*1330*/                   IADD3 R25, P4, R21, R83, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*1340*/                   IMAD.X R80, RZ, RZ, R84, P3 ;
+        /*1350*/                   IADD3 R69, P1, R2, R69, RZ ;
+        /*1360*/                   IMAD R70, R70, 0x10, R3 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*1370*/                   LEA R20, P3, R27, c[0x0][0x160], 0x2 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
+        /*1380*/                   IMAD R2, R68, 0x8, R21 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*1390*/                   LOP3.LUT R3, R111, R100, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*13a0*/                   IMAD.X R68, RZ, RZ, R24, P4 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*13b0*/                   LEA.HI.X R21, R27, c[0x0][0x164], R80, 0x2, P3 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*13c0*/                   IMAD.X R84, RZ, RZ, R84, P1 ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*13d0*/                   IADD3 R83, P2, R2, R83, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*13e0*/                   IMAD.SHL.U32 R23, R3, 0x4, RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*13f0*/                   LEA R2, P4, R25, c[0x0][0x168], 0x2 ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*1400*/                   LOP3.LUT R27, R113, R100, RZ, 0x3c, !PT ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*1410*/                   LEA.HI.X R3, R25, c[0x0][0x16c], R68, 0x2, P4 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
+        /*1420*/                   IMAD.SHL.U32 R25, R22, 0x2000, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*1430*/                   LOP3.LUT R68, R23, 0xc, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*1440*/                   IMAD.SHL.U32 R27, R27, 0x4, RZ ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*1450*/                   LEA R22, P1, R69, c[0x0][0x160], 0x2 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
+        /*1460*/                   IMAD R81, R82, 0x4, R25 ;
+	//## File "/root/gemm_swizzle.cu", line 54
+        /*1470*/                   IMAD R68, R111, 0x10, R68 ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*1480*/                   LOP3.LUT R80, R27, 0x7c, RZ, 0xc0, !PT ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*1490*/                   LEA.HI.X R23, R69, c[0x0][0x164], R84, 0x2, P1 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
+        /*14a0*/                   IMAD R27, R68, 0x4, R25.reuse ;
+	//## File "/root/gemm_swizzle.cu", line 63
+        /*14b0*/                   IMAD R80, R113, 0x80, R80 ;
+        /*14c0*/                   IMAD.X R68, RZ, RZ, R24, P2 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
+        /*14d0*/                   LEA R24, P1, R83.reuse, c[0x0][0x168], 0x2 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
+        /*14e0*/                   IMAD R69, R70, 0x4, R25.reuse ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
         /*14f0*/              @!PT LDS RZ, [RZ] ;
-        /*1500*/                   LDGSTS.E.BYPASS.128 [R101+0x80], [R80.64] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*1510*/                   LEA R76, P3, R77, c[0x0][0x168], 0x2 ;
-        /*1520*/                   LEA R78, P1, R79, c[0x0][0x168], 0x2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*1530*/                   LDGSTS.E.BYPASS.128 [R101+0x1080], [R2.64] ;
+        /*1500*/              @!PT LDS RZ, [RZ] ;
+        /*1510*/              @!PT LDS RZ, [RZ] ;
+        /*1520*/                   LDGSTS.E.BYPASS.128 [R27+0x80], [R20.64] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*1540*/                   LEA R85, R97, UR5, 0x2 ;
+        /*1530*/                   IMAD R71, R80, 0x4, R25 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*1550*/                   LEA.HI.X R71, R71, c[0x0][0x16c], R90, 0x2, P2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*1560*/                   LDGSTS.E.BYPASS.128 [R101+0x2080], [R4.64] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*1570*/                   LEA R87, R96, UR5, 0x2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*1580*/                   LEA.HI.X R77, R77, c[0x0][0x16c], R86, 0x2, P3 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*1590*/                   LDGSTS.E.BYPASS.128 [R101+0x3080], [R6.64] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*15a0*/                   LEA R91, R92, UR5, 0x2 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 144
-        /*15b0*/                   LEA.HI.X R79, R79, c[0x0][0x16c], R84, 0x2, P1 ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*15c0*/                   LDGSTS.E.BYPASS.128 [R85+0x8080], [R68.64] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*15d0*/                   LEA R95, R88, UR5, 0x2 ;
+        /*1540*/                   LEA.HI.X R25, R83, c[0x0][0x16c], R68, 0x2, P1 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*15e0*/                   IMAD.MOV.U32 R3, RZ, RZ, R83 ;
+        /*1550*/                   IMAD.MOV R68, RZ, RZ, -R26 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
+        /*1560*/                   LDGSTS.E.BYPASS.128 [R69+0x80], [R22.64] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 180
-        /*15f0*/                   LOP3.LUT R2, R115, 0xff, RZ, 0xc0, !PT ;
+        /*1570*/                   LOP3.LUT R26, R109, 0xff, RZ, 0xc0, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 998
-        /*1600*/                   LDGSTS.E.BYPASS.128 [R87+0x8080], [R70.64] ;
-        /*1610*/                   LDGSTS.E.BYPASS.128 [R91+0x8080], [R76.64] ;
-        /*1620*/                   LDGSTS.E.BYPASS.128 [R95+0x8080], [R78.64] ;
+        /*1580*/                   LDGSTS.E.BYPASS.128 [R71+0x4080], [R2.64] ;
+        /*1590*/                   LDGSTS.E.BYPASS.128 [R81+0x4080], [R24.64] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 793
-        /*1630*/                   NOP ;
-        /*1640*/               @P0 ATOMS.ADD.S32 RZ, [UR14+0x4], R3 ;
-        /*1650*/              @!PT LDS RZ, [RZ] ;
-        /*1660*/              @!PT LDS RZ, [RZ] ;
-        /*1670*/              @!PT LDS RZ, [RZ] ;
-        /*1680*/              @!PT LDS RZ, [RZ] ;
-        /*1690*/                   ARRIVES.LDGSTSBAR.64 [UR14] ;
-        /*16a0*/                   NOP ;
+        /*15a0*/                   NOP ;
+        /*15b0*/               @P0 ATOMS.ADD.S32 RZ, [UR6+0x4], R68 ;
+        /*15c0*/              @!PT LDS RZ, [RZ] ;
+        /*15d0*/              @!PT LDS RZ, [RZ] ;
+        /*15e0*/              @!PT LDS RZ, [RZ] ;
+        /*15f0*/              @!PT LDS RZ, [RZ] ;
+        /*1600*/                   ARRIVES.LDGSTSBAR.64 [UR6] ;
+        /*1610*/                   NOP ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/ptx/parallel_synchronization_and_communication_instructions_mbarrier.h", line 136
-        /*16b0*/                   MEMBAR.ALL.CTA ;
-        /*16c0*/                   ATOMS.ARRIVE.64 RZ, [UR14] ;
+        /*1620*/                   MEMBAR.ALL.CTA ;
+        /*1630*/                   ATOMS.ARRIVE.64 RZ, [UR6] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 180
-        /*16d0*/                   ISETP.NE.AND P0, PT, R2, 0x2, PT ;
-	//## File "/root/gemm_swizzle.cu", line 169
-        /*16e0*/                   UIADD3 UR12, UR12, 0x1, URZ ;
+        /*1640*/                   ISETP.NE.AND P0, PT, R26, 0x2, PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 182
-        /*16f0*/                   ISETP.NE.AND P1, PT, R82, RZ, PT ;
-        /*1700*/                   LOP3.LUT R3, R108, 0xfffe, RZ, 0xc0, !PT ;
-        /*1710*/                   SEL R2, RZ, 0x1, P1 ;
+        /*1650*/                   ISETP.NE.AND P1, PT, R0, RZ, PT ;
+        /*1660*/                   LOP3.LUT R3, R97, 0xfffe, RZ, 0xc0, !PT ;
+        /*1670*/                   SEL R0, RZ, 0x1, P1 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 180
-        /*1720*/                   SEL R115, R115, RZ, P0 ;
+        /*1680*/                   SEL R109, R109, RZ, P0 ;
+	//## File "/root/gemm_swizzle.cu", line 156
+        /*1690*/                   IADD3 R115, R115, 0x1, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 182
-        /*1730*/              @!P0 LOP3.LUT R108, R3, R2, RZ, 0xfc, !PT ;
+        /*16a0*/              @!P0 LOP3.LUT R97, R3, R0, RZ, 0xfc, !PT ;
 .L_x_8:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 250
-        /*1740*/                   IMAD.SHL.U32 R107, R110, 0x10, RZ ;
+        /*16b0*/                   IMAD.SHL.U32 R96, R101, 0x10, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 190
-        /*1750*/                   LOP3.LUT R2, R108, 0x2, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 152
-        /*1760*/                   ULOP3.LUT UR5, UR4, 0x1, URZ, 0xc0, !UPT ;
+        /*16c0*/                   LOP3.LUT R0, R97, 0x2, RZ, 0xc0, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 250
-        /*1770*/                   LOP3.LUT R107, R107, 0xff0, RZ, 0xe2, !PT ;
+        /*16d0*/                   LOP3.LUT R96, R96, 0xff0, RZ, 0xe2, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 190
-        /*1780*/                   SHF.R.U32.HI R4, RZ, 0x1, R2 ;
+        /*16e0*/                   SHF.R.U32.HI R20, RZ, 0x1, R0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/chrono.h", line 35
-        /*1790*/                   CS2R R2, SR_GLOBALTIMERLO ;
+        /*16f0*/                   CS2R R2, SR_GLOBALTIMERLO ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 373
-        /*17a0*/                   LDS R5, [R107+0x4] ;
-        /*17b0*/                   LOP3.LUT R6, R4, 0xffff, RZ, 0xc0, !PT ;
-        /*17c0*/                   IMAD.U32 R4, R6, -0x80000000, RZ ;
-        /*17d0*/                   LOP3.LUT P0, RZ, R5, 0x80000000, R4, 0x48, !PT ;
-        /*17e0*/                   NOP ;
-        /*17f0*/                   IMAD.MOV.U32 R68, RZ, RZ, RZ ;
+        /*1700*/                   LDS R21, [R96+0x4] ;
+        /*1710*/                   LOP3.LUT R22, R20, 0xffff, RZ, 0xc0, !PT ;
+        /*1720*/                   IMAD.U32 R20, R22, -0x80000000, RZ ;
+        /*1730*/                   LOP3.LUT P0, RZ, R21, 0x80000000, R20, 0x48, !PT ;
+        /*1740*/                   NOP ;
+        /*1750*/                   IMAD.MOV.U32 R24, RZ, RZ, RZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 654
-        /*1800*/               @P0 BRA `(.L_x_14) ;
+        /*1760*/               @P0 BRA `(.L_x_14) ;
 .L_x_18:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 656
-        /*1810*/                   ISETP.GE.AND P0, PT, R68, 0x10, PT ;
-        /*1820*/              @!P0 BRA `(.L_x_15) ;
+        /*1770*/                   ISETP.GE.AND P0, PT, R24, 0x10, PT ;
+        /*1780*/              @!P0 BRA `(.L_x_15) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/chrono.h", line 35
-        /*1830*/                   CS2R R4, SR_GLOBALTIMERLO ;
+        /*1790*/                   CS2R R20, SR_GLOBALTIMERLO ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1284
-        /*1840*/                   IADD3 R7, P0, -R2, R4, RZ ;
-        /*1850*/                   IMAD.X R5, R5, 0x1, ~R3, P0 ;
+        /*17a0*/                   IADD3 R23, P0, -R2, R20, RZ ;
+        /*17b0*/                   IMAD.X R21, R21, 0x1, ~R3, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1213
-        /*1860*/                   ISETP.GE.U32.AND P0, PT, R7, 0x3d0900, PT ;
-        /*1870*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
+        /*17c0*/                   ISETP.GE.U32.AND P0, PT, R23, 0x3d0900, PT ;
+        /*17d0*/                   ISETP.GE.AND.EX P0, PT, R21, RZ, PT, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 667
-        /*1880*/              @!P0 BRA `(.L_x_16) ;
+        /*17e0*/              @!P0 BRA `(.L_x_16) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 310
-        /*1890*/                   NANOSLEEP 0xf4240 ;
+        /*17f0*/                   NANOSLEEP 0xf4240 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 668
-        /*18a0*/                   BRA `(.L_x_17) ;
+        /*1800*/                   BRA `(.L_x_17) ;
 .L_x_16:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1213
-        /*18b0*/                   ISETP.GE.U32.AND P0, PT, R7, 0x9c40, PT ;
-        /*18c0*/                   ISETP.GE.AND.EX P0, PT, R5, RZ, PT, P0 ;
+        /*1810*/                   ISETP.GE.U32.AND P0, PT, R23, 0x9c40, PT ;
+        /*1820*/                   ISETP.GE.AND.EX P0, PT, R21, RZ, PT, P0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 669
-        /*18d0*/              @!P0 BRA `(.L_x_17) ;
+        /*1830*/              @!P0 BRA `(.L_x_17) ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/chrono", line 1332
-        /*18e0*/                   SHF.R.S32.HI R4, RZ, 0x1f, R5 ;
-        /*18f0*/                   LEA.HI R4, P0, R4, R7, RZ, 0x2 ;
-        /*1900*/                   IMAD.X R5, RZ, RZ, R5, P0 ;
-        /*1910*/                   SHF.R.U64 R4, R4, 0x2, R5 ;
+        /*1840*/                   SHF.R.S32.HI R20, RZ, 0x1f, R21 ;
+        /*1850*/                   LEA.HI R20, P0, R20, R23, RZ, 0x2 ;
+        /*1860*/                   IMAD.X R21, RZ, RZ, R21, P0 ;
+        /*1870*/                   SHF.R.U64 R20, R20, 0x2, R21 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 310
-        /*1920*/                   NANOSLEEP R4 ;
+        /*1880*/                   NANOSLEEP R20 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 670
-        /*1930*/                   BRA `(.L_x_17) ;
+        /*1890*/                   BRA `(.L_x_17) ;
 .L_x_15:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 659
-        /*1940*/                   IADD3 R68, R68, 0x1, RZ ;
+        /*18a0*/                   IADD3 R24, R24, 0x1, RZ ;
 .L_x_17:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 373
-        /*1950*/                   LDS R4, [R107+0x4] ;
-        /*1960*/                   IMAD.U32 R5, R6, -0x80000000, RZ ;
-        /*1970*/                   LOP3.LUT P0, RZ, R4, 0x80000000, R5, 0x48, !PT ;
-        /*1980*/                   NOP ;
+        /*18b0*/                   LDS R20, [R96+0x4] ;
+        /*18c0*/                   IMAD.U32 R21, R22, -0x80000000, RZ ;
+        /*18d0*/                   LOP3.LUT P0, RZ, R20, 0x80000000, R21, 0x48, !PT ;
+        /*18e0*/                   NOP ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__threading_support", line 654
-        /*1990*/              @!P0 BRA `(.L_x_18) ;
+        /*18f0*/              @!P0 BRA `(.L_x_18) ;
 .L_x_14:
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*19a0*/                   IMAD.SHL.U32 R2, R118.reuse, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 191
-        /*19b0*/                   BAR.SYNC.DEFER_BLOCKING 0x0 ;
+	//## File "/root/gemm_swizzle.cu", line 139
+        /*1900*/                   IMAD.SHL.U32 R91, R100.reuse, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 107
+        /*1910*/                   LOP3.LUT R93, R100.reuse, 0xf, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1920*/                   IMAD.SHL.U32 R2, R113, 0x20, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 107
+        /*1930*/                   SHF.R.U32.HI R94, RZ, 0x4, R112 ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*19c0*/                   LEA R5, R118, 0x200, 0x7 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*19d0*/                   USHF.L.U32 UR5, UR5, 0xe, URZ ;
+        /*1940*/                   IMAD.SHL.U32 R92, R100, 0x80, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 139
+        /*1950*/                   LOP3.LUT R91, R91, 0xc, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1960*/                   USHF.L.U32 UR6, UR4, 0xd, URZ ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1970*/                   LOP3.LUT R93, R2, 0x60, R93, 0xe2, !PT ;
 	//## File "/root/gemm_swizzle.cu", line 32
-        /*19e0*/                   LOP3.LUT R7, R111, 0x4, R116, 0x78, !PT ;
-        /*19f0*/                   LOP3.LUT R4, R2.reuse, 0x7fffffc4, R113, 0x78, !PT ;
-        /*1a00*/                   IADD3 R2, R2, 0x10, RZ ;
+        /*1980*/                   LOP3.LUT R21, R91, 0x10, RZ, 0xfc, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1990*/                   ULOP3.LUT UR6, UR6, 0x2000, URZ, 0xc0, !UPT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*19a0*/                   LOP3.LUT R2, R94, 0x3, R93, 0x78, !PT ;
+        /*19b0*/                   IMAD.SHL.U32 R90, R93.reuse, 0x10, RZ ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*1a10*/                   IMAD R7, R112, 0x20, R7 ;
+        /*19c0*/                   LOP3.LUT R92, R92, 0x180, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*19d0*/                   IMAD.SHL.U32 R93, R93, 0x4, RZ ;
 	//## File "/root/gemm_swizzle.cu", line 32
-        /*1a20*/                   LOP3.LUT R3, R4, 0x3, R113, 0xf8, !PT ;
-        /*1a30*/                   LOP3.LUT R2, R2, 0x7fffffc4, R113, 0x78, !PT ;
+        /*19e0*/                   LOP3.LUT R3, R91, 0x7fffffc4, R108.reuse, 0x78, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*19f0*/                   IMAD.SHL.U32 R23, R2, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 32
+        /*1a00*/                   LOP3.LUT R21, R21, 0x7fffffc4, R108, 0x78, !PT ;
+        /*1a10*/                   LOP3.LUT R3, R3, 0x3, R108.reuse, 0xf8, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1a20*/                   IMAD.IADD R20, R90, 0x1, R23 ;
+	//## File "/root/gemm_swizzle.cu", line 34
+        /*1a30*/                   LOP3.LUT R2, R92, 0x200, RZ, 0xfc, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 32
+        /*1a40*/                   LOP3.LUT R21, R21, 0x3, R108, 0xf8, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 34
+        /*1a50*/                   IMAD.IADD R3, R3, 0x1, R92 ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1a60*/                   LOP3.LUT R23, R23, 0x100, R90, 0xfe, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*1a40*/                   LEA R68, R7, UR5, 0x2 ;
+        /*1a70*/                   LEA R20, R20, UR6, 0x2 ;
 	//## File "/root/gemm_swizzle.cu", line 34
-        /*1a50*/                   IMAD R3, R118, 0x80, R3 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*1a60*/                   LOP3.LUT R2, R2, 0x3, R113, 0xf8, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1a70*/                   IMAD.SHL.U32 R3, R3, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*1a80*/                   IMAD.IADD R2, R2, 0x1, R5 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1a90*/                   LOP3.LUT R87, R3, 0xffffffbc, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1aa0*/                   IMAD.SHL.U32 R86, R2, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*1ab0*/                   LDSM.16.M88.4 R4, [R68+0x80] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1ac0*/                   LOP3.LUT R80, R87.reuse, 0x20, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1ad0*/                   LOP3.LUT R81, R86.reuse, 0x20, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*1ae0*/                   LDSM.16.M88.4 R76, [R68+0x880] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1af0*/                   LOP3.LUT R2, R87.reuse, 0x40, RZ, 0xfc, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1b00*/                   LOP3.LUT R3, R86, 0x40, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1b10*/                   LDS R80, [R80+UR5+0x8080] ;
-        /*1b20*/                   LOP3.LUT R70, R87, 0x80, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1b30*/                   LOP3.LUT R71, R86.reuse, 0x80, RZ, 0x3c, !PT ;
-        /*1b40*/                   LDS R81, [R81+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1b50*/                   LOP3.LUT R84, R87.reuse, 0x60, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1b60*/                   LOP3.LUT R85, R86.reuse, 0x60, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1b70*/                   LDS R2, [R2+UR5+0x8080] ;
-        /*1b80*/                   LOP3.LUT R68, R87.reuse, 0xa0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1b90*/                   LOP3.LUT R69, R86.reuse, 0xa0, RZ, 0x3c, !PT ;
-        /*1ba0*/                   LDS R3, [R3+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1bb0*/                   LDS R70, [R70+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1bc0*/                   LDS R71, [R71+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1bd0*/                   LDS R82, [R87+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1be0*/                   LDS R83, [R86+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1bf0*/                   LDS R84, [R84+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1c00*/                   LDS R85, [R85+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1c10*/                   LDS R68, [R68+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1c20*/                   LDS R69, [R69+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1c30*/                   HMMA.1688.F32.TF32 R12, R4, R80.reuse, R12 ;
-        /*1c40*/                   HMMA.1688.F32.TF32 R16, R76, R80, R16 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1c50*/                   LOP3.LUT R80, R87, 0xc0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1c60*/                   HMMA.1688.F32.TF32 R20, R4, R2, R20 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1c70*/                   LOP3.LUT R81, R86, 0xc0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1c80*/                   LOP3.LUT R87, R87, 0xe0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1c90*/                   LOP3.LUT R86, R86, 0xe0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1ca0*/                   LDS R80, [R80+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1cb0*/                   HMMA.1688.F32.TF32 R24, R76, R2, R24 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1cc0*/                   LDS R81, [R81+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1cd0*/                   LDS R2, [R87+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1ce0*/                   HMMA.1688.F32.TF32 R44, R4, R70.reuse, R44 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1cf0*/                   LDS R3, [R86+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1d00*/                   HMMA.1688.F32.TF32 R48, R76, R70, R48 ;
-	//## File "/root/gemm_swizzle.cu", line 198
-        /*1d10*/                   LOP3.LUT R70, R118, 0x8, RZ, 0xfc, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1d20*/                   HMMA.1688.F32.TF32 R36, R4, R82, R36 ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*1d30*/                   LEA R71, R70, 0x200, 0x7 ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1d40*/                   HMMA.1688.F32.TF32 R40, R76, R82, R40 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*1d50*/                   IMAD.SHL.U32 R82, R70, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1d60*/                   HMMA.1688.F32.TF32 R28, R4, R84, R28 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*1d70*/                   LOP3.LUT R83, R111, 0x8, R114, 0x1e, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*1d80*/                   IMAD R83, R112, 0x20, R83 ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1d90*/                   HMMA.1688.F32.TF32 R32, R76, R84, R32 ;
+        /*1a80*/                   IMAD.IADD R2, R21, 0x1, R2 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*1da0*/                   LEA R100, R83, UR5, 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*1db0*/                   LOP3.LUT R84, R82.reuse, 0x7fffffc4, R113, 0x78, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1dc0*/                   HMMA.1688.F32.TF32 R52, R4, R68, R52 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*1dd0*/                   IADD3 R82, R82, 0x10, RZ ;
-        /*1de0*/                   LOP3.LUT R82, R82, 0x7fffffc4, R113, 0x78, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1df0*/                   HMMA.1688.F32.TF32 R56, R76, R68, R56 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*1e00*/                   LOP3.LUT R82, R82, 0x3, R113, 0xf8, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*1e10*/                   IMAD.IADD R71, R82, 0x1, R71 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*1e20*/                   LOP3.LUT R69, R84, 0x3, R113, 0xf8, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1e30*/                   HMMA.1688.F32.TF32 R64, R76, R80, R64 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1e40*/                   IMAD.SHL.U32 R94, R71, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*1e50*/                   IMAD R69, R70, 0x80, R69 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1e60*/                   LDS R83, [R94+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1e70*/                   IMAD.SHL.U32 R69, R69, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1e80*/                   HMMA.1688.F32.TF32 R8, R76, R2, R8 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1e90*/                   LOP3.LUT R91, R94.reuse, 0x20, RZ, 0x3c, !PT ;
-        /*1ea0*/                   LOP3.LUT R87, R94.reuse, 0x40, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1eb0*/                   LOP3.LUT R95, R69, 0xffffffbc, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1ec0*/                   LOP3.LUT R77, R94, 0xa0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1ed0*/                   HMMA.1688.F32.TF32 R60, R4, R80, R60 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1ee0*/                   LOP3.LUT R76, R95.reuse, 0xa0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*1ef0*/                   LDSM.16.M88.4 R68, [R100+0x80] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1f00*/                   LOP3.LUT R78, R95, 0x80, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1f10*/                   LOP3.LUT R79, R94.reuse, 0x80, RZ, 0x3c, !PT ;
-        /*1f20*/                   LDS R77, [R77+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1f30*/                   LOP3.LUT R90, R95.reuse, 0x20, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*1f40*/                   HMMA.1688.F32.TF32 R72, R4, R2, R72 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1f50*/                   LOP3.LUT R86, R95.reuse, 0x40, RZ, 0xfc, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*1f60*/                   LDSM.16.M88.4 R4, [R100+0x880] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1f70*/                   LOP3.LUT R84, R95.reuse, 0x60, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1f80*/                   LOP3.LUT R85, R94, 0x60, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1f90*/                   LDS R76, [R76+UR5+0x8080] ;
-        /*1fa0*/                   LOP3.LUT R2, R95, 0xc0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1fb0*/                   LOP3.LUT R3, R94.reuse, 0xc0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*1fc0*/                   LDS R78, [R78+UR5+0x8080] ;
-        /*1fd0*/                   LOP3.LUT R80, R95, 0xe0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*1fe0*/                   LOP3.LUT R81, R94, 0xe0, RZ, 0x3c, !PT ;
-        /*1ff0*/                   LDS R79, [R79+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2000*/                   LDS R82, [R95+UR5+0x8080] ;
-        /*2010*/                   LDS R2, [R2+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2020*/                   LDS R3, [R3+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2030*/                   LDS R90, [R90+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2040*/                   LDS R91, [R91+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2050*/                   LDS R86, [R86+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2060*/                   LDS R87, [R87+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2070*/                   LDS R84, [R84+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2080*/                   HMMA.1688.F32.TF32 R52, R68, R76.reuse, R52 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2090*/                   LDS R85, [R85+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*20a0*/                   LDS R80, [R80+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*20b0*/                   HMMA.1688.F32.TF32 R56, R4, R76, R56 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*20c0*/                   LDS R81, [R81+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 198
-        /*20d0*/                   LOP3.LUT R76, R118, 0x10, RZ, 0xfc, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*20e0*/                   HMMA.1688.F32.TF32 R44, R68, R78.reuse, R44 ;
-        /*20f0*/                   HMMA.1688.F32.TF32 R48, R4, R78, R48 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*2100*/                   IMAD.SHL.U32 R78, R76, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2110*/                   HMMA.1688.F32.TF32 R36, R68, R82, R36 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*2120*/                   LOP3.LUT R79, R111, 0x10, R114, 0x1e, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*2130*/                   IMAD R79, R112, 0x20, R79 ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2140*/                   HMMA.1688.F32.TF32 R40, R4, R82, R40 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*2150*/                   LOP3.LUT R82, R78.reuse, 0x7fffffc4, R113, 0x78, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2160*/                   HMMA.1688.F32.TF32 R60, R68, R2, R60 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*2170*/                   IADD3 R78, R78, 0x10, RZ ;
-        /*2180*/                   LOP3.LUT R77, R82, 0x3, R113.reuse, 0xf8, !PT ;
-        /*2190*/                   LOP3.LUT R78, R78, 0x7fffffc4, R113, 0x78, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*21a0*/                   HMMA.1688.F32.TF32 R64, R4, R2, R64 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*21b0*/                   LOP3.LUT R78, R78, 0x3, R113, 0xf8, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*21c0*/                   IMAD R77, R76, 0x80, R77 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*21d0*/                   IMAD.SHL.U32 R77, R77, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*21e0*/                   LEA R3, R76, 0x200, 0x7 ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*21f0*/                   HMMA.1688.F32.TF32 R12, R68, R90, R12 ;
+        /*1a90*/                   LEA R68, R23, UR6, 0x2 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1aa0*/                   IMAD.SHL.U32 R95, R3, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1ab0*/                   LEA R94, R94, 0x8, 0x2 ;
+        /*1ac0*/                   IMAD.SHL.U32 R98, R2, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 233
+        /*1ad0*/                   LDSM.16.M88.4 R20, [R20+0x80] ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1ae0*/                   LOP3.LUT R86, R95, 0x20, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 233
+        /*1af0*/                   LDSM.16.M88.4 R68, [R68+0x80] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1b00*/                   LOP3.LUT R25, R98.reuse, 0x40, RZ, 0x3c, !PT ;
+        /*1b10*/                   LOP3.LUT R87, R98.reuse, 0x20, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1b20*/                   LDS R2, [R95+UR6+0x4100] ;
+        /*1b30*/                   LOP3.LUT R26, R95.reuse, 0x60, RZ, 0x3c, !PT ;
+        /*1b40*/                   LOP3.LUT R88, R95, 0xa0, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1b50*/                   LDS R3, [R98+UR6+0x4100] ;
+        /*1b60*/                   LOP3.LUT R27, R98.reuse, 0x60, RZ, 0x3c, !PT ;
+        /*1b70*/                   LOP3.LUT R89, R98.reuse, 0xa0, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1b80*/                   LDS R24, [R95+UR6+0x40c0] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1b90*/                   LOP3.LUT R85, R98, 0xc0, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1ba0*/                   LOP3.LUT R80, R95, 0xe0, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1bb0*/                   LDS R25, [R25+UR6+0x4080] ;
+        /*1bc0*/                   LOP3.LUT R81, R98, 0xe0, RZ, 0x3c, !PT ;
+        /*1bd0*/                   LOP3.LUT R93, R94, 0xc, R93, 0x78, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1be0*/                   LDS R82, [R95+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1bf0*/                   LDS R83, [R98+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1c00*/                   LDS R86, [R86+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1c10*/                   LDS R87, [R87+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1c20*/                   LDS R26, [R26+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1c30*/                   LDS R27, [R27+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1c40*/                   LDS R88, [R88+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1c50*/                   LDS R89, [R89+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1c60*/                   HMMA.1688.F32.TF32 R36, R20, R2.reuse, R36 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1c70*/                   LDS R84, [R95+UR6+0x4140] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1c80*/                   LDS R85, [R85+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1c90*/                   HMMA.1688.F32.TF32 R52, R68, R2, R52 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1ca0*/                   LDS R80, [R80+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1cb0*/                   LDS R81, [R81+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1cc0*/                   LOP3.LUT R3, R91.reuse, 0x20, RZ, 0xfc, !PT ;
+        /*1cd0*/                   HMMA.1688.F32.TF32 R8, R20, R24, R8 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1ce0*/                   LOP3.LUT R91, R91, 0x30, RZ, 0xfc, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1cf0*/                   LOP3.LUT R3, R3, 0x7fffffc4, R108.reuse, 0x78, !PT ;
+        /*1d00*/                   LOP3.LUT R2, R92.reuse, 0x400, RZ, 0xfc, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1d10*/                   LOP3.LUT R91, R91, 0x7fffffc4, R108.reuse, 0x78, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1d20*/                   HMMA.1688.F32.TF32 R4, R68, R24, R4 ;
+        /*1d30*/                   LOP3.LUT R3, R3, 0x3, R108.reuse, 0xf8, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1d40*/                   LOP3.LUT R92, R92, 0x600, RZ, 0xfc, !PT ;
+        /*1d50*/                   LOP3.LUT R91, R91, 0x3, R108, 0xf8, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1d60*/                   IMAD.IADD R2, R3, 0x1, R2 ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1d70*/                   LOP3.LUT R24, R93.reuse, R90, RZ, 0xfc, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1d80*/                   HMMA.1688.F32.TF32 R12, R20, R82, R12 ;
+        /*1d90*/                   LOP3.LUT R90, R93, 0x100, R90, 0xfe, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1da0*/                   IMAD.IADD R91, R91, 0x1, R92 ;
+        /*1db0*/                   IMAD.SHL.U32 R2, R2, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1dc0*/                   IMAD.SHL.U32 R91, R91, 0x4, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1dd0*/                   HMMA.1688.F32.TF32 R72, R68, R82, R72 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1de0*/                   LOP3.LUT R2, R2, 0xffffffbc, RZ, 0xc0, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1df0*/                   LOP3.LUT R103, R91.reuse, 0x20, RZ, 0x3c, !PT ;
+        /*1e00*/                   LDS R93, [R91+UR6+0x4080] ;
+        /*1e10*/                   LOP3.LUT R99, R91.reuse, 0x40, RZ, 0x3c, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*2200*/                   LEA R2, R79, UR5, 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*2210*/                   IMAD.IADD R3, R78, 0x1, R3 ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2220*/                   HMMA.1688.F32.TF32 R16, R4.reuse, R90, R16 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2230*/                   IMAD.SHL.U32 R90, R3, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2240*/                   LOP3.LUT R91, R77, 0xffffffbc, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2250*/                   HMMA.1688.F32.TF32 R24, R4, R86, R24 ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*2260*/                   LDSM.16.M88.4 R76, [R2+0x80] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2270*/                   LOP3.LUT R82, R91, 0x40, RZ, 0xfc, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2280*/                   LOP3.LUT R83, R90.reuse, 0x40, RZ, 0x3c, !PT ;
-        /*2290*/                   LOP3.LUT R3, R90.reuse, 0xc0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*22a0*/                   HMMA.1688.F32.TF32 R32, R4.reuse, R84, R32 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*22b0*/                   LDS R82, [R82+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*22c0*/                   LDS R83, [R83+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*22d0*/                   HMMA.1688.F32.TF32 R8, R4, R80, R8 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*22e0*/                   LDS R3, [R3+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*22f0*/                   LOP3.LUT R4, R91, 0xa0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2300*/                   HMMA.1688.F32.TF32 R20, R68, R86, R20 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2310*/                   LOP3.LUT R5, R90, 0xa0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2320*/                   LOP3.LUT R6, R91.reuse, 0x80, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2330*/                   LOP3.LUT R7, R90.reuse, 0x80, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2340*/                   LDS R4, [R4+UR5+0x8080] ;
-        /*2350*/                   LOP3.LUT R86, R91.reuse, 0x20, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2360*/                   HMMA.1688.F32.TF32 R28, R68.reuse, R84, R28 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2370*/                   LOP3.LUT R87, R90.reuse, 0x20, RZ, 0x3c, !PT ;
-        /*2380*/                   LDS R5, [R5+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2390*/                   LDS R6, [R6+UR5+0x8080] ;
-        /*23a0*/                   LOP3.LUT R84, R91.reuse, 0x60, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*23b0*/                   HMMA.1688.F32.TF32 R72, R68, R80, R72 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*23c0*/                   LOP3.LUT R85, R90, 0x60, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*23d0*/                   LDSM.16.M88.4 R68, [R2+0x880] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*23e0*/                   LDS R7, [R7+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*23f0*/                   LDS R80, [R91+UR5+0x8080] ;
-        /*2400*/                   LOP3.LUT R2, R91.reuse, 0xc0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2410*/                   HMMA.1688.F32.TF32 R20, R76, R82, R20 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2420*/                   LDS R81, [R90+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2430*/                   LDS R2, [R2+UR5+0x8080] ;
-        /*2440*/                   LOP3.LUT R91, R91, 0xe0, RZ, 0x3c, !PT ;
-        /*2450*/                   LDS R86, [R86+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2460*/                   LOP3.LUT R90, R90, 0xe0, RZ, 0x3c, !PT ;
-        /*2470*/                   LDS R87, [R87+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2480*/                   LDS R84, [R84+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2490*/                   LDS R85, [R85+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*24a0*/                   HMMA.1688.F32.TF32 R52, R76, R4, R52 ;
-        /*24b0*/                   HMMA.1688.F32.TF32 R24, R68.reuse, R82, R24 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*24c0*/                   LDS R82, [R91+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*24d0*/                   LDS R83, [R90+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*24e0*/                   HMMA.1688.F32.TF32 R56, R68, R4, R56 ;
-	//## File "/root/gemm_swizzle.cu", line 198
-        /*24f0*/                   LOP3.LUT R4, R118, 0x18, RZ, 0xfc, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2500*/                   HMMA.1688.F32.TF32 R44, R76, R6.reuse, R44 ;
-        /*2510*/                   HMMA.1688.F32.TF32 R48, R68, R6, R48 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*2520*/                   IMAD.SHL.U32 R6, R4, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2530*/                   HMMA.1688.F32.TF32 R36, R76, R80, R36 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*2540*/                   LOP3.LUT R7, R111, 0x18, R114, 0x1e, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*2550*/                   IMAD R7, R112, 0x20, R7 ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2560*/                   HMMA.1688.F32.TF32 R40, R68, R80, R40 ;
+        /*1e20*/                   LEA R82, R24, UR6, 0x2 ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1e30*/                   HMMA.1688.F32.TF32 R28, R20, R86, R28 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_20_intrinsics.hpp", line 149
-        /*2570*/                   LEA R119, R7, UR5, 0x2 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*2580*/                   LOP3.LUT R80, R6.reuse, 0x7fffffc4, R113.reuse, 0x78, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2590*/                   HMMA.1688.F32.TF32 R60, R76, R2, R60 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*25a0*/                   IADD3 R6, R6, 0x10, RZ ;
-        /*25b0*/                   LOP3.LUT R5, R80, 0x3, R113.reuse, 0xf8, !PT ;
-        /*25c0*/                   LOP3.LUT R6, R6, 0x7fffffc4, R113, 0x78, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*25d0*/                   HMMA.1688.F32.TF32 R64, R68, R2, R64 ;
-	//## File "/root/gemm_swizzle.cu", line 32
-        /*25e0*/                   LOP3.LUT R6, R6, 0x3, R113, 0xf8, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*25f0*/                   IMAD R5, R4, 0x80, R5 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2600*/                   IMAD.SHL.U32 R5, R5, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*2610*/                   LEA R3, R4, 0x200, 0x7 ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2620*/                   HMMA.1688.F32.TF32 R12, R76, R86.reuse, R12 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2630*/                   LOP3.LUT R80, R5, 0xffffffbc, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 34
-        /*2640*/                   IMAD.IADD R3, R6, 0x1, R3 ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*2650*/                   LDSM.16.M88.4 R4, [R119+0x80] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2660*/                   LOP3.LUT R104, R80.reuse, 0x20, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2670*/                   IMAD.SHL.U32 R81, R3, 0x4, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2680*/                   HMMA.1688.F32.TF32 R16, R68, R86, R16 ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2690*/                   LOP3.LUT R100, R80, 0x40, RZ, 0xfc, !PT ;
-        /*26a0*/                   LOP3.LUT R94, R80.reuse, 0x60, RZ, 0x3c, !PT ;
-        /*26b0*/                   LDS R104, [R104+UR5+0x8080] ;
-        /*26c0*/                   LOP3.LUT R90, R80.reuse, 0x80, RZ, 0x3c, !PT ;
-        /*26d0*/                   LOP3.LUT R86, R80.reuse, 0xa0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*26e0*/                   HMMA.1688.F32.TF32 R28, R76, R84.reuse, R28 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*26f0*/                   LOP3.LUT R105, R81.reuse, 0x20, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2700*/                   LDS R100, [R100+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2710*/                   LOP3.LUT R101, R81.reuse, 0x40, RZ, 0x3c, !PT ;
-        /*2720*/                   LOP3.LUT R95, R81.reuse, 0x60, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2730*/                   LDS R94, [R94+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2740*/                   LOP3.LUT R91, R81.reuse, 0x80, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2750*/                   HMMA.1688.F32.TF32 R32, R68, R84, R32 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2760*/                   LOP3.LUT R87, R81, 0xa0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2770*/                   LDS R90, [R90+UR5+0x8080] ;
-        /*2780*/                   LOP3.LUT R2, R80, 0xe0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2790*/                   LOP3.LUT R3, R81.reuse, 0xe0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*27a0*/                   LDS R86, [R86+UR5+0x8080] ;
-        /*27b0*/                   LOP3.LUT R84, R80, 0xc0, RZ, 0x3c, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*27c0*/                   HMMA.1688.F32.TF32 R72, R76, R82.reuse, R72 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*27d0*/                   LOP3.LUT R85, R81, 0xc0, RZ, 0x3c, !PT ;
-        /*27e0*/                   LDS R105, [R105+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*27f0*/                   LDS R84, [R84+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*2800*/                   HMMA.1688.F32.TF32 R8, R68, R82, R8 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2810*/                   LDS R101, [R101+UR5+0x8080] ;
-        /*2820*/                   LDS R95, [R95+UR5+0x8080] ;
-        /*2830*/                   LDS R91, [R91+UR5+0x8080] ;
-        /*2840*/                   LDS R87, [R87+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 246
-        /*2850*/                   LDSM.16.M88.4 R76, [R119+0x880] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2860*/                   LDS R85, [R85+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2870*/                   LDS R80, [R80+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*2880*/                   LDS R81, [R81+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 217
-        /*2890*/                   LDS R2, [R2+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*28a0*/                   HMMA.1688.F32.TF32 R12, R4.reuse, R104, R12 ;
-	//## File "/root/gemm_swizzle.cu", line 218
-        /*28b0*/                   LDS R3, [R3+UR5+0x8080] ;
-	//## File "/root/gemm_swizzle.cu", line 267
-        /*28c0*/                   HMMA.1688.F32.TF32 R20, R4.reuse, R100, R20 ;
-        /*28d0*/                   HMMA.1688.F32.TF32 R28, R4, R94, R28 ;
-        /*28e0*/                   HMMA.1688.F32.TF32 R16, R76.reuse, R104, R16 ;
-        /*28f0*/                   HMMA.1688.F32.TF32 R24, R76.reuse, R100, R24 ;
-        /*2900*/                   HMMA.1688.F32.TF32 R32, R76, R94, R32 ;
-        /*2910*/                   HMMA.1688.F32.TF32 R44, R4, R90.reuse, R44 ;
-        /*2920*/                   HMMA.1688.F32.TF32 R48, R76, R90, R48 ;
-        /*2930*/                   HMMA.1688.F32.TF32 R52, R4, R86.reuse, R52 ;
-        /*2940*/                   HMMA.1688.F32.TF32 R56, R76, R86, R56 ;
-        /*2950*/                   HMMA.1688.F32.TF32 R60, R4, R84.reuse, R60 ;
-        /*2960*/                   HMMA.1688.F32.TF32 R64, R76, R84, R64 ;
-        /*2970*/                   HMMA.1688.F32.TF32 R36, R4, R80.reuse, R36 ;
-        /*2980*/                   HMMA.1688.F32.TF32 R40, R76, R80, R40 ;
-        /*2990*/                   HMMA.1688.F32.TF32 R72, R4, R2.reuse, R72 ;
-        /*29a0*/                   HMMA.1688.F32.TF32 R8, R76, R2, R8 ;
+        /*1e40*/                   LEA R24, R90, UR6, 0x2 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1e50*/                   LDS R92, [R2+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1e60*/                   LOP3.LUT R95, R91, 0x60, RZ, 0x3c, !PT ;
+        /*1e70*/                   LOP3.LUT R83, R91.reuse, 0xc0, RZ, 0x3c, !PT ;
+        /*1e80*/                   LDS R103, [R103+UR6+0x4080] ;
+        /*1e90*/                   LOP3.LUT R3, R91.reuse, 0xe0, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1ea0*/                   HMMA.1688.F32.TF32 R44, R68, R86, R44 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1eb0*/                   LOP3.LUT R102, R2.reuse, 0x20, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1ec0*/                   LDS R99, [R99+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1ed0*/                   LOP3.LUT R98, R2.reuse, 0x40, RZ, 0xfc, !PT ;
+        /*1ee0*/                   LOP3.LUT R94, R2, 0x60, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1ef0*/                   LDS R95, [R95+UR6+0x4080] ;
+        /*1f00*/                   LOP3.LUT R87, R91.reuse, 0xa0, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1f10*/                   HMMA.1688.F32.TF32 R32, R20.reuse, R26, R32 ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1f20*/                   LOP3.LUT R118, R91, 0x80, RZ, 0x3c, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1f30*/                   LDS R102, [R102+UR6+0x4080] ;
+        /*1f40*/                   LDS R98, [R98+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1f50*/                   HMMA.1688.F32.TF32 R40, R20.reuse, R88, R40 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1f60*/                   LDS R94, [R94+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1f70*/                   LDS R91, [R118+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1f80*/                   HMMA.1688.F32.TF32 R76, R20.reuse, R84, R76 ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*1f90*/                   LDS R87, [R87+UR6+0x4080] ;
+        /*1fa0*/                   LDS R83, [R83+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1fb0*/                   HMMA.1688.F32.TF32 R16, R20, R80, R16 ;
+	//## File "/root/gemm_swizzle.cu", line 233
+        /*1fc0*/                   LDSM.16.M88.4 R20, [R82+0x80] ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*1fd0*/                   LDS R90, [R107.X4+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*1fe0*/                   HMMA.1688.F32.TF32 R48, R68.reuse, R26, R48 ;
+	//## File "/root/gemm_swizzle.cu", line 233
+        /*1ff0*/                   LDSM.16.M88.4 R24, [R24+0x80] ;
+	//## File "/root/gemm_swizzle.cu", line 207
+        /*2000*/                   LDS R3, [R3+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*2010*/                   HMMA.1688.F32.TF32 R56, R68.reuse, R88, R56 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*2020*/                   LDS R86, [R106.X4+UR6+0x4080] ;
+        /*2030*/                   LDS R82, [R105.X4+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*2040*/                   HMMA.1688.F32.TF32 R60, R68.reuse, R84, R60 ;
+	//## File "/root/gemm_swizzle.cu", line 206
+        /*2050*/                   LDS R2, [R104.X4+UR6+0x4080] ;
+	//## File "/root/gemm_swizzle.cu", line 254
+        /*2060*/                   HMMA.1688.F32.TF32 R64, R68, R80, R64 ;
+        /*2070*/                   HMMA.1688.F32.TF32 R28, R20, R102.reuse, R28 ;
+        /*2080*/                   HMMA.1688.F32.TF32 R44, R24, R102, R44 ;
+        /*2090*/                   HMMA.1688.F32.TF32 R8, R20, R98.reuse, R8 ;
+        /*20a0*/                   HMMA.1688.F32.TF32 R4, R24, R98, R4 ;
+        /*20b0*/                   HMMA.1688.F32.TF32 R32, R20, R94.reuse, R32 ;
+        /*20c0*/                   HMMA.1688.F32.TF32 R48, R24, R94, R48 ;
+        /*20d0*/                   HMMA.1688.F32.TF32 R12, R20, R92.reuse, R12 ;
+        /*20e0*/                   HMMA.1688.F32.TF32 R72, R24, R92, R72 ;
+        /*20f0*/                   HMMA.1688.F32.TF32 R36, R20, R90.reuse, R36 ;
+        /*2100*/                   HMMA.1688.F32.TF32 R52, R24, R90, R52 ;
+        /*2110*/                   HMMA.1688.F32.TF32 R40, R20, R86.reuse, R40 ;
+        /*2120*/                   HMMA.1688.F32.TF32 R56, R24, R86, R56 ;
+        /*2130*/                   HMMA.1688.F32.TF32 R76, R20, R82.reuse, R76 ;
+        /*2140*/                   HMMA.1688.F32.TF32 R60, R24, R82, R60 ;
+        /*2150*/                   HMMA.1688.F32.TF32 R16, R20, R2.reuse, R16 ;
+        /*2160*/                   HMMA.1688.F32.TF32 R64, R24, R2, R64 ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/ptx/parallel_synchronization_and_communication_instructions_mbarrier.h", line 136
-        /*29b0*/              @!PT LDS RZ, [RZ] ;
-        /*29c0*/              @!PT LDS RZ, [RZ] ;
-        /*29d0*/              @!PT LDS RZ, [RZ] ;
-        /*29e0*/              @!PT LDS RZ, [RZ] ;
-        /*29f0*/                   MEMBAR.ALL.CTA ;
+        /*2170*/              @!PT LDS RZ, [RZ] ;
+        /*2180*/              @!PT LDS RZ, [RZ] ;
+        /*2190*/              @!PT LDS RZ, [RZ] ;
+        /*21a0*/              @!PT LDS RZ, [RZ] ;
+        /*21b0*/                   MEMBAR.ALL.CTA ;
+	//## File "/root/gemm_swizzle.cu", line 138
+        /*21c0*/                   UIADD3 UR4, UR4, 0x1, URZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 197
-        /*2a00*/                   IADD3 R110, R110, 0x1, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 151
-        /*2a10*/                   UIADD3 UR4, UR4, 0x1, URZ ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 199
-        /*2a20*/                   LOP3.LUT P1, RZ, R108, 0x2, RZ, 0xc0, !PT ;
+        /*21d0*/                   IADD3 R101, R101, 0x1, RZ ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/ptx/parallel_synchronization_and_communication_instructions_mbarrier.h", line 136
-        /*2a30*/                   ATOMS.ARRIVE.64 RZ, [R107+URZ+0x8] ;
-	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 197
-        /*2a40*/                   LOP3.LUT R2, R110, 0xff, RZ, 0xc0, !PT ;
+        /*21e0*/                   ATOMS.ARRIVE.64 RZ, [R96+URZ+0x8] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 199
-        /*2a50*/                   LOP3.LUT R3, R108, 0xfffd, RZ, 0xc0, !PT ;
+        /*21f0*/                   ISETP.NE.AND P1, PT, R0, RZ, PT ;
+	//## File "/root/gemm_swizzle.cu", line 138
+        /*2200*/                   UISETP.GE.U32.AND UP0, UPT, UR4, UR5, UPT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 197
-        /*2a60*/                   ISETP.NE.AND P0, PT, R2, 0x2, PT ;
+        /*2210*/                   LOP3.LUT R2, R101, 0xff, RZ, 0xc0, !PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 199
-        /*2a70*/                   SEL R2, RZ, 0x2, P1 ;
-	//## File "/root/gemm_swizzle.cu", line 151
-        /*2a80*/                   ISETP.LE.U32.AND P1, PT, R117, UR4, PT ;
+        /*2220*/                   SEL R0, RZ, 0x2, P1 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 197
-        /*2a90*/                   SEL R110, R110, RZ, P0 ;
+        /*2230*/                   ISETP.NE.AND P0, PT, R2, 0x2, PT ;
+	//## File "/root/gemm_swizzle.cu", line 138
+        /*2240*/                   PLOP3.LUT P1, PT, PT, PT, UP0, 0x80, 0x0 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 199
-        /*2aa0*/              @!P0 LOP3.LUT R108, R2, R3, RZ, 0xfc, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 151
-        /*2ab0*/               @P1 CALL.REL.NOINC `(.L_x_19) ;
-        /*2ac0*/                   BRA `(.L_x_20) ;
+        /*2250*/                   LOP3.LUT R3, R97, 0xfffd, RZ, 0xc0, !PT ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 197
+        /*2260*/                   SEL R101, R101, RZ, P0 ;
+	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 199
+        /*2270*/              @!P0 LOP3.LUT R97, R0, R3, RZ, 0xfc, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 138
+        /*2280*/               @P1 CALL.REL.NOINC `(.L_x_19) ;
+        /*2290*/                   BRA `(.L_x_20) ;
 .L_x_19:
-	//## File "/root/gemm_swizzle.cu", line 291
-        /*2ad0*/                   LOP3.LUT P0, RZ, R108, 0x4, RZ, 0xc0, !PT ;
-        /*2ae0*/                   PLOP3.LUT P0, PT, P0, PT, PT, 0x8, 0x0 ;
-        /*2af0*/                   BRA `(.L_x_21) ;
+        /*22a0*/                   NOP ;
+	//## File "/root/gemm_swizzle.cu", line 278
+        /*22b0*/                   LOP3.LUT P0, RZ, R97, 0x4, RZ, 0xc0, !PT ;
+        /*22c0*/                   PLOP3.LUT P0, PT, P0, PT, PT, 0x8, 0x0 ;
+        /*22d0*/                   BRA `(.L_x_21) ;
 .L_x_2:
-        /*2b00*/                   PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x0 ;
-        /*2b10*/                   CS2R R34, SRZ ;
-        /*2b20*/                   CS2R R32, SRZ ;
-        /*2b30*/                   CS2R R26, SRZ ;
-        /*2b40*/                   CS2R R24, SRZ ;
-        /*2b50*/                   CS2R R18, SRZ ;
-        /*2b60*/                   CS2R R16, SRZ ;
-        /*2b70*/                   CS2R R42, SRZ ;
-        /*2b80*/                   CS2R R40, SRZ ;
-        /*2b90*/                   CS2R R74, SRZ ;
-        /*2ba0*/                   CS2R R72, SRZ ;
-        /*2bb0*/                   CS2R R62, SRZ ;
-        /*2bc0*/                   CS2R R60, SRZ ;
-        /*2bd0*/                   CS2R R54, SRZ ;
-        /*2be0*/                   CS2R R52, SRZ ;
-        /*2bf0*/                   CS2R R46, SRZ ;
-        /*2c00*/                   CS2R R44, SRZ ;
-        /*2c10*/                   CS2R R30, SRZ ;
-        /*2c20*/                   CS2R R28, SRZ ;
-        /*2c30*/                   CS2R R22, SRZ ;
-        /*2c40*/                   CS2R R20, SRZ ;
-        /*2c50*/                   CS2R R14, SRZ ;
-        /*2c60*/                   CS2R R12, SRZ ;
-        /*2c70*/                   CS2R R38, SRZ ;
-        /*2c80*/                   CS2R R36, SRZ ;
-        /*2c90*/                   CS2R R48, SRZ ;
-        /*2ca0*/                   CS2R R50, SRZ ;
-        /*2cb0*/                   CS2R R56, SRZ ;
-        /*2cc0*/                   CS2R R58, SRZ ;
-        /*2cd0*/                   CS2R R64, SRZ ;
-        /*2ce0*/                   CS2R R66, SRZ ;
-        /*2cf0*/                   CS2R R8, SRZ ;
-        /*2d00*/                   CS2R R10, SRZ ;
+        /*22e0*/                   PLOP3.LUT P0, PT, PT, PT, PT, 0x8, 0x0 ;
+        /*22f0*/                   CS2R R50, SRZ ;
+        /*2300*/                   CS2R R48, SRZ ;
+        /*2310*/                   CS2R R6, SRZ ;
+        /*2320*/                   CS2R R4, SRZ ;
+        /*2330*/                   CS2R R46, SRZ ;
+        /*2340*/                   CS2R R44, SRZ ;
+        /*2350*/                   CS2R R74, SRZ ;
+        /*2360*/                   CS2R R72, SRZ ;
+        /*2370*/                   CS2R R18, SRZ ;
+        /*2380*/                   CS2R R16, SRZ ;
+        /*2390*/                   CS2R R78, SRZ ;
+        /*23a0*/                   CS2R R76, SRZ ;
+        /*23b0*/                   CS2R R42, SRZ ;
+        /*23c0*/                   CS2R R40, SRZ ;
+        /*23d0*/                   CS2R R38, SRZ ;
+        /*23e0*/                   CS2R R36, SRZ ;
+        /*23f0*/                   CS2R R34, SRZ ;
+        /*2400*/                   CS2R R32, SRZ ;
+        /*2410*/                   CS2R R10, SRZ ;
+        /*2420*/                   CS2R R8, SRZ ;
+        /*2430*/                   CS2R R30, SRZ ;
+        /*2440*/                   CS2R R28, SRZ ;
+        /*2450*/                   CS2R R14, SRZ ;
+        /*2460*/                   CS2R R12, SRZ ;
+        /*2470*/                   CS2R R52, SRZ ;
+        /*2480*/                   CS2R R54, SRZ ;
+        /*2490*/                   CS2R R56, SRZ ;
+        /*24a0*/                   CS2R R58, SRZ ;
+        /*24b0*/                   CS2R R60, SRZ ;
+        /*24c0*/                   CS2R R62, SRZ ;
+        /*24d0*/                   CS2R R64, SRZ ;
+        /*24e0*/                   CS2R R66, SRZ ;
 .L_x_21:
-	//## File "/root/gemm_swizzle.cu", line 109
-        /*2d10*/                   S2UR UR4, SR_CTAID.Y ;
-	//## File "/root/gemm_swizzle.cu", line 108
-        /*2d20*/                   S2R R3, SR_CTAID.X ;
-	//## File "/root/gemm_swizzle.cu", line 124
-        /*2d30*/                   SHF.R.U32.HI R2, RZ, 0x1, R109 ;
-        /*2d40*/                   IMAD.MOV.U32 R5, RZ, RZ, c[0x0][0x180] ;
-	//## File "/root/gemm_swizzle.cu", line 115
-        /*2d50*/                   LOP3.LUT R0, R109, 0x1f, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2d60*/                   IMAD.MOV.U32 R69, RZ, RZ, 0x4 ;
-	//## File "/root/gemm_swizzle.cu", line 121
-        /*2d70*/                   LOP3.LUT R2, R2, 0x7fffffc0, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 124
-        /*2d80*/                   IMAD.SHL.U32 R5, R5, 0x8, RZ ;
-        /*2d90*/                   LOP3.LUT R109, R109, 0x60, RZ, 0xc0, !PT ;
-	//## File "/root/gemm_swizzle.cu", line 123
-        /*2da0*/                   USHF.L.U32 UR4, UR4, 0x7, URZ ;
-	//## File "/root/gemm_swizzle.cu", line 121
-        /*2db0*/                   IMAD R3, R3, 0x80, R2 ;
-	//## File "/root/gemm_swizzle.cu", line 124
-        /*2dc0*/                   IMAD R7, R118, 0x2, R3 ;
-        /*2dd0*/                   LEA.HI R0, R0, UR4, RZ, 0x1e ;
-        /*2de0*/                   IMAD.IADD R0, R109, 0x1, R0 ;
-        /*2df0*/                   IMAD R2, R0.reuse, c[0x0][0x180], R5 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2e00*/                   IMAD R3, R0.reuse, c[0x0][0x180], R7 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*2e10*/                   IADD3 R0, R0, 0x10, RZ ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2e20*/                   IMAD.IADD R4, R7, 0x1, R2 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2e30*/                   IMAD.WIDE R2, R3, R69, c[0x0][0x170] ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*2e40*/                   IMAD R6, R0, c[0x0][0x180], R5 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2e50*/                   STG.E [R2.64], R36 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2e60*/                   IMAD.WIDE R4, R4, R69, c[0x0][0x170] ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*2e70*/                   STG.E [R2.64+0x4], R37 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2e80*/                   IMAD R0, R0, c[0x0][0x180], R7 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2e90*/                   IMAD.IADD R68, R7, 0x1, R6 ;
-        /*2ea0*/                   STG.E [R4.64], R38 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2eb0*/                   IMAD.WIDE R6, R0, R69, c[0x0][0x170] ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*2ec0*/                   STG.E [R4.64+0x4], R39 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2ed0*/                   STG.E [R2.64+0x20], R12 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*2ee0*/                   STG.E [R2.64+0x24], R13 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2ef0*/                   STG.E [R4.64+0x20], R14 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*2f00*/                   STG.E [R4.64+0x24], R15 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2f10*/                   STG.E [R2.64+0x40], R20 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2f20*/                   IMAD.WIDE R12, R68, R69, c[0x0][0x170] ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*2f30*/                   STG.E [R2.64+0x44], R21 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2f40*/                   STG.E [R4.64+0x40], R22 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*2f50*/                   STG.E [R4.64+0x44], R23 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2f60*/                   STG.E [R2.64+0x60], R28 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*2f70*/                   STG.E [R2.64+0x64], R29 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2f80*/                   STG.E [R4.64+0x60], R30 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*2f90*/                   STG.E [R4.64+0x64], R31 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2fa0*/                   STG.E [R2.64+0x80], R44 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*2fb0*/                   STG.E [R2.64+0x84], R45 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*2fc0*/                   STG.E [R4.64+0x80], R46 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*2fd0*/                   STG.E [R4.64+0x84], R47 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*2fe0*/                   STG.E [R2.64+0xa0], R52 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*2ff0*/                   STG.E [R2.64+0xa4], R53 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3000*/                   STG.E [R4.64+0xa0], R54 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3010*/                   STG.E [R4.64+0xa4], R55 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*3020*/                   STG.E [R2.64+0xc0], R60 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*3030*/                   STG.E [R2.64+0xc4], R61 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3040*/                   STG.E [R4.64+0xc0], R62 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3050*/                   STG.E [R4.64+0xc4], R63 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*3060*/                   STG.E [R2.64+0xe0], R72 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*3070*/                   STG.E [R2.64+0xe4], R73 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3080*/                   STG.E [R4.64+0xe0], R74 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3090*/                   STG.E [R4.64+0xe4], R75 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*30a0*/                   STG.E [R6.64], R40 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*30b0*/                   STG.E [R6.64+0x4], R41 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*30c0*/                   STG.E [R12.64], R42 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*30d0*/                   STG.E [R12.64+0x4], R43 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*30e0*/                   STG.E [R6.64+0x20], R16 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*30f0*/                   STG.E [R6.64+0x24], R17 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3100*/                   STG.E [R12.64+0x20], R18 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3110*/                   STG.E [R12.64+0x24], R19 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*3120*/                   STG.E [R6.64+0x40], R24 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*3130*/                   STG.E [R6.64+0x44], R25 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3140*/                   STG.E [R12.64+0x40], R26 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3150*/                   STG.E [R12.64+0x44], R27 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*3160*/                   STG.E [R6.64+0x60], R32 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*3170*/                   STG.E [R6.64+0x64], R33 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3180*/                   STG.E [R12.64+0x60], R34 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3190*/                   STG.E [R12.64+0x64], R35 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*31a0*/                   STG.E [R6.64+0x80], R48 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*31b0*/                   STG.E [R6.64+0x84], R49 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*31c0*/                   STG.E [R12.64+0x80], R50 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*31d0*/                   STG.E [R12.64+0x84], R51 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*31e0*/                   STG.E [R6.64+0xa0], R56 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*31f0*/                   STG.E [R6.64+0xa4], R57 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3200*/                   STG.E [R12.64+0xa0], R58 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3210*/                   STG.E [R12.64+0xa4], R59 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*3220*/                   STG.E [R6.64+0xc0], R64 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*3230*/                   STG.E [R6.64+0xc4], R65 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3240*/                   STG.E [R12.64+0xc0], R66 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3250*/                   STG.E [R12.64+0xc4], R67 ;
-	//## File "/root/gemm_swizzle.cu", line 310
-        /*3260*/                   STG.E [R6.64+0xe0], R8 ;
-	//## File "/root/gemm_swizzle.cu", line 311
-        /*3270*/                   STG.E [R6.64+0xe4], R9 ;
-	//## File "/root/gemm_swizzle.cu", line 312
-        /*3280*/                   STG.E [R12.64+0xe0], R10 ;
-	//## File "/root/gemm_swizzle.cu", line 313
-        /*3290*/                   STG.E [R12.64+0xe4], R11 ;
+	//## File "/root/gemm_swizzle.cu", line 107
+        /*24f0*/                   IMAD.SHL.U32 R0, R100.reuse, 0x2, RZ ;
+        /*2500*/                   LOP3.LUT R3, R100, 0x60, RZ, 0xc0, !PT ;
+        /*2510*/                   IMAD.MOV.U32 R2, RZ, RZ, c[0x0][0x180] ;
+        /*2520*/                   SHF.R.U32.HI R21, RZ, 0x1, R100 ;
+        /*2530*/                   LOP3.LUT R0, R0, 0x6, RZ, 0xc0, !PT ;
+        /*2540*/                   IMAD.SHL.U32 R2, R2, 0x8, RZ ;
+        /*2550*/                   LEA.HI R3, R112, R3, RZ, 0x1e ;
+        /*2560*/                   LOP3.LUT R21, R0, 0x7fffffc0, R21, 0xf8, !PT ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2570*/                   IMAD.MOV.U32 R0, RZ, RZ, 0x4 ;
+	//## File "/root/gemm_swizzle.cu", line 107
+        /*2580*/                   IMAD R3, R114, 0x80, R3 ;
+        /*2590*/                   IMAD.IADD R110, R110, 0x1, R21 ;
+        /*25a0*/                   IMAD R21, R3.reuse, c[0x0][0x180], R2 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*25b0*/                   IADD3 R23, R3.reuse, 0x10, RZ ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*25c0*/                   IMAD R3, R3, c[0x0][0x180], R110 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*25d0*/                   IMAD.IADD R21, R110, 0x1, R21 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*25e0*/                   IMAD R25, R23, c[0x0][0x180], R2 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*25f0*/                   IMAD.WIDE R2, R3, R0, c[0x0][0x170] ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2600*/                   IMAD.WIDE R20, R21, R0, c[0x0][0x170] ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2610*/                   STG.E [R2.64], R12 ;
+        /*2620*/                   IMAD R23, R23, c[0x0][0x180], R110 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2630*/                   STG.E [R2.64+0x4], R13 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2640*/                   IMAD.IADD R25, R110, 0x1, R25 ;
+        /*2650*/                   STG.E [R20.64], R14 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2660*/                   STG.E [R20.64+0x4], R15 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2670*/                   STG.E [R2.64+0x20], R28 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2680*/                   STG.E [R2.64+0x24], R29 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2690*/                   STG.E [R20.64+0x20], R30 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*26a0*/                   STG.E [R20.64+0x24], R31 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*26b0*/                   STG.E [R2.64+0x40], R8 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*26c0*/                   STG.E [R2.64+0x44], R9 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*26d0*/                   STG.E [R20.64+0x40], R10 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*26e0*/                   STG.E [R20.64+0x44], R11 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*26f0*/                   STG.E [R2.64+0x60], R32 ;
+        /*2700*/                   IMAD.WIDE R8, R23, R0, c[0x0][0x170] ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2710*/                   STG.E [R2.64+0x64], R33 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2720*/                   STG.E [R20.64+0x60], R34 ;
+        /*2730*/                   IMAD.WIDE R10, R25, R0, c[0x0][0x170] ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2740*/                   STG.E [R20.64+0x64], R35 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2750*/                   STG.E [R2.64+0x80], R36 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2760*/                   STG.E [R2.64+0x84], R37 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2770*/                   STG.E [R20.64+0x80], R38 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2780*/                   STG.E [R20.64+0x84], R39 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2790*/                   STG.E [R2.64+0xa0], R40 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*27a0*/                   STG.E [R2.64+0xa4], R41 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*27b0*/                   STG.E [R20.64+0xa0], R42 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*27c0*/                   STG.E [R20.64+0xa4], R43 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*27d0*/                   STG.E [R2.64+0xc0], R76 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*27e0*/                   STG.E [R2.64+0xc4], R77 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*27f0*/                   STG.E [R20.64+0xc0], R78 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2800*/                   STG.E [R20.64+0xc4], R79 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2810*/                   STG.E [R2.64+0xe0], R16 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2820*/                   STG.E [R2.64+0xe4], R17 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2830*/                   STG.E [R20.64+0xe0], R18 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2840*/                   STG.E [R20.64+0xe4], R19 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2850*/                   STG.E [R8.64], R72 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2860*/                   STG.E [R8.64+0x4], R73 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2870*/                   STG.E [R10.64], R74 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2880*/                   STG.E [R10.64+0x4], R75 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2890*/                   STG.E [R8.64+0x20], R44 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*28a0*/                   STG.E [R8.64+0x24], R45 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*28b0*/                   STG.E [R10.64+0x20], R46 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*28c0*/                   STG.E [R10.64+0x24], R47 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*28d0*/                   STG.E [R8.64+0x40], R4 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*28e0*/                   STG.E [R8.64+0x44], R5 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*28f0*/                   STG.E [R10.64+0x40], R6 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2900*/                   STG.E [R10.64+0x44], R7 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2910*/                   STG.E [R8.64+0x60], R48 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2920*/                   STG.E [R8.64+0x64], R49 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2930*/                   STG.E [R10.64+0x60], R50 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2940*/                   STG.E [R10.64+0x64], R51 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2950*/                   STG.E [R8.64+0x80], R52 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2960*/                   STG.E [R8.64+0x84], R53 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2970*/                   STG.E [R10.64+0x80], R54 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2980*/                   STG.E [R10.64+0x84], R55 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2990*/                   STG.E [R8.64+0xa0], R56 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*29a0*/                   STG.E [R8.64+0xa4], R57 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*29b0*/                   STG.E [R10.64+0xa0], R58 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*29c0*/                   STG.E [R10.64+0xa4], R59 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*29d0*/                   STG.E [R8.64+0xc0], R60 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*29e0*/                   STG.E [R8.64+0xc4], R61 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*29f0*/                   STG.E [R10.64+0xc0], R62 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2a00*/                   STG.E [R10.64+0xc4], R63 ;
+	//## File "/root/gemm_swizzle.cu", line 297
+        /*2a10*/                   STG.E [R8.64+0xe0], R64 ;
+	//## File "/root/gemm_swizzle.cu", line 298
+        /*2a20*/                   STG.E [R8.64+0xe4], R65 ;
+	//## File "/root/gemm_swizzle.cu", line 299
+        /*2a30*/                   STG.E [R10.64+0xe0], R66 ;
+	//## File "/root/gemm_swizzle.cu", line 300
+        /*2a40*/                   STG.E [R10.64+0xe4], R67 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 132
-        /*32a0*/               @P0 EXIT ;
+        /*2a50*/               @P0 EXIT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/crt/sm_70_rt.hpp", line 103
-        /*32b0*/                   ULDC.64 UR4, c[0x0][0x18] ;
+        /*2a60*/                   ULDC.64 UR4, c[0x0][0x18] ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/sm_30_intrinsics.hpp", line 140
-        /*32c0*/                   VOTE.ANY R5, PT, PT ;
+        /*2a70*/                   VOTE.ANY R5, PT, PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/crt/sm_70_rt.hpp", line 103
-        /*32d0*/                   UIADD3 UR4, UP0, UR4, 0x20, URZ ;
+        /*2a80*/                   UIADD3 UR4, UP0, UR4, 0x20, URZ ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 107
-        /*32e0*/                   S2R R7, SR_LANEID ;
+        /*2a90*/                   S2R R7, SR_LANEID ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/crt/sm_70_rt.hpp", line 103
-        /*32f0*/                   UIADD3.X UR5, URZ, UR5, URZ, UP0, !UPT ;
-        /*3300*/                   IMAD.U32 R2, RZ, RZ, UR4 ;
-        /*3310*/                   IMAD.U32 R3, RZ, RZ, UR5 ;
-        /*3320*/                   MATCH.ANY.U64 R2, R2 ;
+        /*2aa0*/                   UIADD3.X UR5, URZ, UR5, URZ, UP0, !UPT ;
+        /*2ab0*/                   IMAD.U32 R2, RZ, RZ, UR4 ;
+        /*2ac0*/                   IMAD.U32 R3, RZ, RZ, UR5 ;
+        /*2ad0*/                   MATCH.ANY.U64 R2, R2 ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 142
-        /*3330*/                   BREV R0, R2 ;
-        /*3340*/                   FLO.U32.SH R0, R0 ;
-        /*3350*/                   ISETP.NE.AND P0, PT, R7, R0, PT ;
+        /*2ae0*/                   BREV R0, R2 ;
+        /*2af0*/                   FLO.U32.SH R0, R0 ;
+        /*2b00*/                   ISETP.NE.AND P0, PT, R7, R0, PT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 152
-        /*3360*/               @P0 EXIT ;
+        /*2b10*/               @P0 EXIT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 142
-        /*3370*/                   POPC R2, R2 ;
+        /*2b20*/                   POPC R2, R2 ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/support/atomic/atomic_cuda_generated.h", line 14
-        /*3380*/              @!PT LDS RZ, [RZ] ;
-        /*3390*/              @!PT LDS RZ, [RZ] ;
-        /*33a0*/              @!PT LDS RZ, [RZ] ;
-        /*33b0*/              @!PT LDS RZ, [RZ] ;
-        /*33c0*/                   MEMBAR.SC.CTA ;
+        /*2b30*/              @!PT LDS RZ, [RZ] ;
+        /*2b40*/              @!PT LDS RZ, [RZ] ;
+        /*2b50*/              @!PT LDS RZ, [RZ] ;
+        /*2b60*/              @!PT LDS RZ, [RZ] ;
+        /*2b70*/                   MEMBAR.SC.CTA ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/support/atomic/atomic_cuda_generated.h", line 601
-        /*33d0*/                   VOTE.ANY R0, PT, PT ;
+        /*2b80*/                   VOTE.ANY R0, PT, PT ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/support/atomic/atomic_cuda_generated.h", line 600
-        /*33e0*/                   IMAD.MOV R9, RZ, RZ, -R2 ;
+        /*2b90*/                   IMAD.MOV R9, RZ, RZ, -R2 ;
 	//## File "/usr/local/cuda-12.4/targets/x86_64-linux/include/cuda/std/detail/libcxx/include/support/atomic/atomic_cuda_generated.h", line 601
-        /*33f0*/                   ISETP.EQ.U32.AND P0, PT, R0, -0x1, PT ;
-        /*3400*/              @!P0 ATOM.E.ADD.STRONG.SM PT, R3, [R120.64+0x20], R9 ;
-        /*3410*/              @!P0 BRA `(.L_x_22) ;
-        /*3420*/                   SHFL.UP P0, R0, R9, 0x1, RZ ;
-        /*3430*/                   IMAD.MOV.U32 R5, RZ, RZ, R9 ;
-        /*3440*/                   ISETP.EQ.U32.AND P1, PT, R7, 0x1f, PT ;
-        /*3450*/               @P0 IMAD.IADD.U32 R5, R9, 0x1, R0 ;
-        /*3460*/                   SHFL.UP P0, R0, R5, 0x2, RZ ;
-        /*3470*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
-        /*3480*/                   SHFL.UP P0, R0, R5, 0x4, RZ ;
-        /*3490*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
-        /*34a0*/                   SHFL.UP P0, R0, R5, 0x8, RZ ;
-        /*34b0*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
-        /*34c0*/                   SHFL.UP P0, R0, R5, 0x10, RZ ;
-        /*34d0*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
-        /*34e0*/               @P1 ATOM.E.ADD.STRONG.SM PT, R120, [R120.64+0x20], R5 ;
-        /*34f0*/                   SHFL.UP P0, R0, R5, 0x1, RZ ;
-        /*3500*/                   SHFL.IDX PT, R3, R120, 0x1f, 0x1f ;
-        /*3510*/               @P0 IMAD.IADD.U32 R3, R3, 0x1, R0 ;
+        /*2ba0*/                   ISETP.EQ.U32.AND P0, PT, R0, -0x1, PT ;
+        /*2bb0*/              @!P0 ATOM.E.ADD.STRONG.SM PT, R3, [R116.64], R9 ;
+        /*2bc0*/              @!P0 BRA `(.L_x_22) ;
+        /*2bd0*/                   SHFL.UP P0, R0, R9, 0x1, RZ ;
+        /*2be0*/                   IMAD.MOV.U32 R5, RZ, RZ, R9 ;
+        /*2bf0*/                   ISETP.EQ.U32.AND P1, PT, R7, 0x1f, PT ;
+        /*2c00*/               @P0 IMAD.IADD.U32 R5, R9, 0x1, R0 ;
+        /*2c10*/                   SHFL.UP P0, R0, R5, 0x2, RZ ;
+        /*2c20*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
+        /*2c30*/                   SHFL.UP P0, R0, R5, 0x4, RZ ;
+        /*2c40*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
+        /*2c50*/                   SHFL.UP P0, R0, R5, 0x8, RZ ;
+        /*2c60*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
+        /*2c70*/                   SHFL.UP P0, R0, R5, 0x10, RZ ;
+        /*2c80*/               @P0 IMAD.IADD.U32 R5, R5, 0x1, R0 ;
+        /*2c90*/               @P1 ATOM.E.ADD.STRONG.SM PT, R116, [R116.64], R5 ;
+        /*2ca0*/                   SHFL.UP P0, R0, R5, 0x1, RZ ;
+        /*2cb0*/                   SHFL.IDX PT, R3, R116, 0x1f, 0x1f ;
+        /*2cc0*/               @P0 IMAD.IADD.U32 R3, R3, 0x1, R0 ;
 .L_x_22:
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 154
-        /*3520*/                   ISETP.NE.AND P0, PT, R3, R2, PT ;
-        /*3530*/                   NOP ;
+        /*2cd0*/                   ISETP.NE.AND P0, PT, R3, R2, PT ;
+        /*2ce0*/                   NOP ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/pipeline", line 155
-        /*3540*/               @P0 EXIT ;
+        /*2cf0*/               @P0 EXIT ;
 	//## File "/usr/local/cuda/bin/../targets/x86_64-linux/include/cuda/std/detail/libcxx/include/__cuda/barrier.h", line 147
-        /*3550*/                   NOP ;
-        /*3560*/                   NOP ;
-        /*3570*/                   NOP ;
-        /*3580*/                   NOP ;
-	//## File "/root/gemm_swizzle.cu", line 334
-        /*3590*/                   EXIT ;
+        /*2d00*/                   NOP ;
+        /*2d10*/                   NOP ;
+        /*2d20*/                   NOP ;
+        /*2d30*/                   NOP ;
+	//## File "/root/gemm_swizzle.cu", line 321
+        /*2d40*/                   EXIT ;
 .L_x_23:
-        /*35a0*/                   BRA `(.L_x_23);
-        /*35b0*/                   NOP;
-        /*35c0*/                   NOP;
-        /*35d0*/                   NOP;
-        /*35e0*/                   NOP;
-        /*35f0*/                   NOP;
-        /*3600*/                   NOP;
-        /*3610*/                   NOP;
-        /*3620*/                   NOP;
-        /*3630*/                   NOP;
-        /*3640*/                   NOP;
-        /*3650*/                   NOP;
-        /*3660*/                   NOP;
-        /*3670*/                   NOP;
+        /*2d50*/                   BRA `(.L_x_23);
+        /*2d60*/                   NOP;
+        /*2d70*/                   NOP;
+        /*2d80*/                   NOP;
+        /*2d90*/                   NOP;
+        /*2da0*/                   NOP;
+        /*2db0*/                   NOP;
+        /*2dc0*/                   NOP;
+        /*2dd0*/                   NOP;
+        /*2de0*/                   NOP;
+        /*2df0*/                   NOP;
 .L_x_46:
