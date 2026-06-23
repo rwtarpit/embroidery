@@ -351,3 +351,9 @@ After reading SASS (with help of claude) it seems the HMMA instructions are gett
 
 I tried using warp shuffles to load B with ldmatrix but 4 warp shuffles takes much time and instructions than simply loading B tile with manual loads. and on top of that MMA layout for B tile inherently demands either to load B from SMEM transposed or use warp shuffles after x2 ldmatrix, both of which degrades performance.
 
+
+### PTX level pipeline
+
+Reckon that looking at SASS was greatly helpful. I compared my ugly looking SASS code with winged edge's clean SASS and found mine loads pipeline elements from cuda_pipeline.cuh etc and has lots of extra ugly instructions even after the global stores at end of kernel. moreoverly there were `NANOSLEEP` instructions as well that sleeps the warp for 1ms, and thats a lot in GPU regime. so honestly i transitioned to ptx pipeline instructions more with desperation and less with idea of figuring out the roots of ugly SASS code, and damn it does work.
+
+We achieve a staggering `87%` on 128x32x128. The SASS code now looks much better with no extra instructions after global stores and no warp sleeps as well. though i still doubt, there is still some SASS cleaning left.
