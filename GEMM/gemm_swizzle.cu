@@ -1,4 +1,5 @@
 /*
+kernel 1:
 each block computes a tile of output tile(BMxBN)
 each warp in block computes (BM/TILE_SIZE_M, BN/TILE_SIZE_N)
 for tf32, fragment size = (16,16,8)
