@@ -1,5 +1,5 @@
 /*
-kernel 1:
+kernel 1
 each block computes a tile of output tile(BMxBN)
 each warp in block computes (BM/TILE_SIZE_M, BN/TILE_SIZE_N)
 for tf32, fragment size = (16,16,8)
@@ -64,8 +64,8 @@ namespace wt {
     }
 }
 
-template<uint BM, uint BN, uint BK, uint NUM_THREADS, uint accum_size>
-__global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
+template<uint BM, uint BN, uint BK, uint NUM_THREADS, uint accum_size, uint NUM_STAGES>
+__global__ void GEMM_tc(float* A, float*B, float*C, long long* dbg, int N, int M, int K){
 
     int tile_col = blockIdx.x;
     int tile_row = blockIdx.y;
