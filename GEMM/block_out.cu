@@ -1,4 +1,5 @@
 /*
+~80%
 each block computes a tile of output tile(BMxBN)
 each warp in block computes (BM/TILE_SIZE_M, BN/TILE_SIZE_N)
 for tf32, fragment size = (16,16,8)
@@ -32,21 +33,6 @@ __device__ __forceinline__ int swizzle(int row, int col) {
     int col_swizzled    = (swizzled_chunk << 2) | (col & 3);
     
     return row * COLS + col_swizzled;
-}
-
-template <int SwizzleLog2>
-__device__ inline dim3 gemm_swizzle(dim3 block_idx, dim3 grid_dim) {
-    // Treat the entire grid as a 1D linear block ID
-    int linear_id = block_idx.y * grid_dim.x + block_idx.x;
-
-    // Use bit-shifting based on the log2 of your swizzle width
-    // If SwizzleLog2 = 3, then (1 << 3) = 8 (equivalent to SWIZZLE_W = 8)
-    int block_x_swizzled = (linear_id & ((1 << SwizzleLog2) - 1)) + 
-                           (linear_id / ((1 << SwizzleLog2) * grid_dim.y)) * (1 << SwizzleLog2);
-    
-    int block_y_swizzled = (linear_id >> SwizzleLog2) % grid_dim.y;
-
-    return dim3(block_x_swizzled, block_y_swizzled, block_idx.z);
 }
 
 
@@ -84,8 +70,6 @@ namespace wt {
 template<uint BM, uint BN, uint BK, uint NUM_THREADS, uint ACCUM_SIZE, uint NUM_STAGES>
 __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float* C, long long* dbg, int N, int M, int K) {
 
-    long long waitTime = 0, computeTime = 0;
-    long long start;
 
     auto block = cooperative_groups::this_thread_block();
 
@@ -161,12 +145,9 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         uint32_t frag_A[4];
         uint32_t frag_B[2];
         // wait until cur_stage data is fully in smem, then release the slot
-        start = clock64();
         pipe.consumer_wait();
-        waitTime += clock64() - start;
 
         // compute on cur_stage smem tile
-        start = clock64();
 #pragma unroll
         for (int inner_tile = 0; inner_tile < BK / TILE_SIZE_K; ++inner_tile) {
 #pragma unroll
@@ -219,18 +200,11 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                 }
             }
         }
-        computeTime += clock64() - start;
 
         pipe.consumer_release();   // free cur_stage slot for reuse by producer
     
     }
     
-    if (threadIdx.x == 0) {
-        int b = blockIdx.y * gridDim.x + blockIdx.x;
-        dbg[3*b + 0] = waitTime;
-        dbg[3*b + 1] = computeTime;
-        dbg[3*b + 2] = (long long)NUM_TILES;
-    }
 
     // Store
 #pragma unroll
