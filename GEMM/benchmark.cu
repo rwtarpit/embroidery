@@ -7,15 +7,17 @@
 #include <stdlib.h>
 #include <float.h>
 
-#include "gemm_ref.cu"  // runSgemmDoubleBuffering2
-#include "gemm_swizzle.cu"   // GEMM_tc
+#include "kerenl_7.cu"   
+
+// ── macro helpers ─────────────────────────────────────────────────────────────
+#define CDIV(M, N) (((M) + (N) - 1) / (N))
 
 // ── error checking macros ────────────────────────────────────────────────────
 #define CUDA_CHECK(call)                                                        \
     do {                                                                        \
         cudaError_t err = (call);                                               \
         if (err != cudaSuccess) {                                               \
-            fprintf(stderr, "CUDA error %s:%d  %s\n",                          \
+            fprintf(stderr, "CUDA error %s:%d  %s\n",                           \
                     __FILE__, __LINE__, cudaGetErrorString(err));               \
             exit(1);                                                            \
         }                                                                       \
@@ -25,53 +27,77 @@
     do {                                                                        \
         cublasStatus_t st = (call);                                             \
         if (st != CUBLAS_STATUS_SUCCESS) {                                      \
-            fprintf(stderr, "cuBLAS error %s:%d  code=%d\n",                   \
+            fprintf(stderr, "cuBLAS error %s:%d  code=%d\n",                    \
                     __FILE__, __LINE__, st);                                    \
             exit(1);                                                            \
         }                                                                       \
     } while (0)
 
 
+// ── benchmark knobs ──────────────────────────────────────────────────────────
+static constexpr int WARMUP_ITERS = 10;
+static constexpr int BENCH_ITERS  = 100;
+static constexpr int NUM_BUFFERS  = 8; // Number of distinct (A, B, C) matrix sets
+
+
 // ── timing helpers ───────────────────────────────────────────────────────────
-struct Timer {
-    cudaEvent_t start, stop;
-    Timer()  { CUDA_CHECK(cudaEventCreate(&start));
-               CUDA_CHECK(cudaEventCreate(&stop));  }
-    ~Timer() { cudaEventDestroy(start); cudaEventDestroy(stop); }
-    void begin() { CUDA_CHECK(cudaEventRecord(start)); }
-    float end()  {
-        CUDA_CHECK(cudaEventRecord(stop));
-        CUDA_CHECK(cudaEventSynchronize(stop));
-        float ms;
-        CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
-        return ms;
+struct Stats { float median, min, max, avg; };
+
+template<typename Fn>
+Stats measure_circular(Fn fn, int num_buffers, int warmup = WARMUP_ITERS, int iters = BENCH_ITERS) {
+    // 1. Warmup cycling through buffers
+    for (int i = 0; i < warmup; i++) {
+        fn(i % num_buffers);
     }
-};
-
-template<typename Fn>
-struct Stats { float median, min, max; };
-
-template<typename Fn>
-Stats<Fn> measure(Fn fn, int warmup = 10, int iters = 100) {
-    for (int i = 0; i < warmup; i++) fn();
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    float *times = new float[iters];
-    Timer t;
+    // 2. Allocate asynchronous events for per-iteration stats
+    cudaEvent_t *starts = new cudaEvent_t[iters];
+    cudaEvent_t *stops  = new cudaEvent_t[iters];
+    float *times        = new float[iters];
+
     for (int i = 0; i < iters; i++) {
-        t.begin();
-        fn();
-        times[i] = t.end();
+        CUDA_CHECK(cudaEventCreate(&starts[i]));
+        CUDA_CHECK(cudaEventCreate(&stops[i]));
     }
 
-    for (int i = 0; i < iters-1; i++)
-        for (int j = i+1; j < iters; j++)
-            if (times[i] > times[j]) { float tmp=times[i]; times[i]=times[j]; times[j]=tmp; }
+    // 3. Launch asynchronously cycling through distinct matrix buffers
+    for (int i = 0; i < iters; i++) {
+        int buf_idx = i % num_buffers; // Cycle through input buffers to force L2 evictions
+        CUDA_CHECK(cudaEventRecord(starts[i]));
+        fn(buf_idx);
+        CUDA_CHECK(cudaEventRecord(stops[i]));
+    }
+    CUDA_CHECK(cudaDeviceSynchronize());
 
-    Stats<Fn> s;
-    s.median = times[iters/2];
+    // 4. Gather timing data
+    double sum = 0.0;
+    for (int i = 0; i < iters; i++) {
+        CUDA_CHECK(cudaEventElapsedTime(&times[i], starts[i], stops[i]));
+        sum += times[i];
+        cudaEventDestroy(starts[i]);
+        cudaEventDestroy(stops[i]);
+    }
+
+    // Sort to extract percentiles
+    for (int i = 0; i < iters - 1; i++) {
+        for (int j = i + 1; j < iters; j++) {
+            if (times[i] > times[j]) {
+                float tmp = times[i];
+                times[i] = times[j];
+                times[j] = tmp;
+            }
+        }
+    }
+
+    Stats s;
     s.min    = times[0];
-    s.max    = times[iters-1];
+    s.max    = times[iters - 1];
+    s.median = times[iters / 2];
+    s.avg    = (float)(sum / iters);
+
+    delete[] starts;
+    delete[] stops;
     delete[] times;
     return s;
 }
@@ -79,35 +105,11 @@ Stats<Fn> measure(Fn fn, int warmup = 10, int iters = 100) {
 
 // ── kernel configs ────────────────────────────────────────────────────────────
 
-// runSgemmDoubleBuffering2<BM,BN,BK,WM,WN,WNITER,TM,TN,NUM_THREADS>
-//   signature : (M, N, K, alpha, A, B, beta, C)
-//   grid      : (CEIL_DIV(N,BN), CEIL_DIV(M,BM))   blockIdx.x=cCol, blockIdx.y=cRow
-static constexpr int REF_BM      = 128;
-static constexpr int REF_BN      = 128;
-static constexpr int REF_BK      = 16;
-static constexpr int REF_WM      = 64;
-static constexpr int REF_WN      = 64;
-static constexpr int REF_WNITER  = 4;
-static constexpr int REF_TM      = 4;
-static constexpr int REF_TN      = 4;
-static constexpr int REF_THREADS = 128;
-
 // GEMM_tc<BM,BN,BK,NUM_THREADS>
-//   signature : (A, B, C, N, M, K)
-//   grid      : (CEIL_DIV(M,BM), CEIL_DIV(N,BN))   blockIdx.x=tile_col(N), blockIdx.y=tile_row(M)
-//
-// In GEMM_tc:
-//   tile_col = blockIdx.x  → strides along N (cols of C)
-//   tile_row = blockIdx.y  → strides along M (rows of C)
-//   A offset: K * BM * tile_row   — BM rows of A, each row is K wide
-//   B offset: BN * tile_col       — BN cols of B
-//   C store : row = tile_row*BM + ...,  col = tile_col*BN + ...
-//
-// So the grid must be: x = CEIL_DIV(N, BN), y = CEIL_DIV(M, BM)
-static constexpr uint TC_BM      = 128; //128
-static constexpr uint TC_BN      = 64; //128
-static constexpr uint TC_BK      = 64;  //16
-static constexpr uint TC_THREADS = 128; //256
+static constexpr uint TC_BM      = 256;
+static constexpr uint TC_BN      = 128;
+static constexpr uint TC_BK      = 32;
+static constexpr uint TC_THREADS = 256; 
 static constexpr uint NUM_STAGES = 2;
 static constexpr uint ACCUM_SIZE = (TC_BM * TC_BN) / TC_THREADS;
 
@@ -118,30 +120,17 @@ static void cublas_ref(cublasHandle_t handle,
                        int M, int N, int K,
                        float alpha = 1.f, float beta = 0.f)
 {
-    // cuBLAS is column-major: cublasSgemm(N,M,K, B,N, A,K) computes row-major A*B
     CUBLAS_CHECK(cublasSgemm(handle,
         CUBLAS_OP_N, CUBLAS_OP_N,
         N, M, K, &alpha, d_B, N, d_A, K, &beta, d_C, N));
 }
 
-static void launch_ref(float *d_A, float *d_B, float *d_C,
-                       int M, int N, int K,
-                       float alpha = 1.f, float beta = 0.f)
-{
-    const dim3 grid(CEIL_DIV(N, REF_BN), CEIL_DIV(M, REF_BM));
-    runSgemmDoubleBuffering2<REF_BM, REF_BN, REF_BK,
-                             REF_WM, REF_WN, REF_WNITER,
-                             REF_TM, REF_TN, REF_THREADS>
-        <<<grid, REF_THREADS>>>(M, N, K, alpha, d_A, d_B, beta, d_C);
-}
-
-static void launch_tc(float *d_A, float *d_B, float *d_C, long long* dbg,
+static void launch_tc(float *d_A, float *d_B, float *d_C,
                       int M, int N, int K)
 {
-    // x covers N-dimension (tile_col), y covers M-dimension (tile_row)
-    const dim3 grid(CEIL_DIV(N, TC_BN), CEIL_DIV(M, TC_BM));
+    const dim3 grid(CDIV(N, TC_BN), CDIV(M, TC_BM));
     GEMM_tc<TC_BM, TC_BN, TC_BK, TC_THREADS, ACCUM_SIZE, NUM_STAGES><<<grid, TC_THREADS>>>(
-        d_A, d_B, d_C, dbg, N, M, K);
+        d_A, d_B, d_C, N, M, K);
 }
 
 
@@ -163,32 +152,47 @@ static void diff(const char *name, float *d_ref, float *d_custom, int M, int N)
     delete[] h_custom;
 }
 
+// ── reporting helper ─────────────────────────────────────────────────────────
+static void report(const char *name, const Stats &s, double flops)
+{
+    printf("%-16s median %7.3f ms  avg %7.3f ms  min %7.3f ms  max %7.3f ms  |  avg %6.2f TFLOPS  median %6.2f TFLOPS\n",
+           name, s.median, s.avg, s.min, s.max,
+           flops / s.avg / 1e9,
+           flops / s.median / 1e9);
+}
+
 
 // ── main ─────────────────────────────────────────────────────────────────────
 int main() {
-    // A: M x K,  B: K x N,  C: M x N
-    const int M = 4096, K = 4096, N = 5120;
+    const int M = 4096, K = 4096, N = 4096;
     const double flops = 2.0 * M * K * N;
 
-    printf("GEMM  A(%dx%d) @ B(%dx%d) = C(%dx%d)\n\n", M, K, K, N, M, N);
+    printf("GEMM  A(%dx%d) @ B(%dx%d) = C(%dx%d)\n", M, K, K, N, M, N);
+    printf("warmup=%d  iters=%d  buffer_pool=%d sets\n\n", WARMUP_ITERS, BENCH_ITERS, NUM_BUFFERS);
 
-    float *d_A, *d_B, *d_C_ref, *d_C_custom, *d_C_tc;
-    long long* dbg;
-    int nblocks = CEIL_DIV(N,TC_BN) * CEIL_DIV(M,TC_BM);
-    CUDA_CHECK(cudaMalloc(&dbg, 3 * nblocks * sizeof(long long)));
-    CUDA_CHECK(cudaMemset(dbg, 0, 3 * nblocks * sizeof(long long)));
-    CUDA_CHECK(cudaMalloc(&d_A,        M*K*sizeof(float)));
-    CUDA_CHECK(cudaMalloc(&d_B,        K*N*sizeof(float)));
-    CUDA_CHECK(cudaMalloc(&d_C_ref,    M*N*sizeof(float)));
-    CUDA_CHECK(cudaMalloc(&d_C_custom, M*N*sizeof(float)));
-    CUDA_CHECK(cudaMalloc(&d_C_tc,     M*N*sizeof(float)));
+    // ── Allocate arrays of device pointers ────────────────────────────────────
+    float **d_A     = new float*[NUM_BUFFERS];
+    float **d_B     = new float*[NUM_BUFFERS];
+    float **d_C_ref = new float*[NUM_BUFFERS];
+    float **d_C_k   = new float*[NUM_BUFFERS];
 
     float *h_A = new float[M*K];
     float *h_B = new float[K*N];
-    for (int i = 0; i < M*K; i++) h_A[i] = (float)rand()/RAND_MAX - 0.5f;
-    for (int i = 0; i < K*N; i++) h_B[i] = (float)rand()/RAND_MAX - 0.5f;
-    CUDA_CHECK(cudaMemcpy(d_A, h_A, M*K*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_B, h_B, K*N*sizeof(float), cudaMemcpyHostToDevice));
+
+    for (int b = 0; b < NUM_BUFFERS; b++) {
+        CUDA_CHECK(cudaMalloc(&d_A[b],     M*K*sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&d_B[b],     K*N*sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&d_C_ref[b], M*N*sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&d_C_k[b],   M*N*sizeof(float)));
+
+        // Initialize each matrix set with distinct random values
+        for (int i = 0; i < M*K; i++) h_A[i] = (float)rand()/RAND_MAX - 0.5f;
+        for (int i = 0; i < K*N; i++) h_B[i] = (float)rand()/RAND_MAX - 0.5f;
+
+        CUDA_CHECK(cudaMemcpy(d_A[b], h_A, M*K*sizeof(float), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(d_B[b], h_B, K*N*sizeof(float), cudaMemcpyHostToDevice));
+    }
+
     delete[] h_A;
     delete[] h_B;
 
@@ -196,66 +200,48 @@ int main() {
     CUBLAS_CHECK(cublasCreate(&handle));
     CUBLAS_CHECK(cublasSetMathMode(handle, CUBLAS_TF32_TENSOR_OP_MATH));
 
-    // ── correctness ──────────────────────────────────────────────────────────
-    cublas_ref(handle, d_A, d_B, d_C_ref, M, N, K);
+    // ── correctness check on buffer 0 ─────────────────────────────────────────
+    cublas_ref(handle, d_A[0], d_B[0], d_C_ref[0], M, N, K);
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    launch_ref(d_A, d_B, d_C_custom, M, N, K);
+    launch_tc(d_A[0], d_B[0], d_C_k[0], M, N, K);
     CUDA_CHECK(cudaDeviceSynchronize());
-    diff("(DoubleBuffering2)", d_C_ref, d_C_custom, M, N);
-
-    launch_tc(d_A, d_B, d_C_tc, dbg, M, N, K);
-    CUDA_CHECK(cudaDeviceSynchronize());
-    diff("(GEMM_tc)", d_C_ref, d_C_tc, M, N);
+    diff("(kernel)", d_C_ref[0], d_C_k[0], M, N);
 
     printf("\n");
 
-
     // ── benchmark cuBLAS ─────────────────────────────────────────────────────
-    float alpha = 1.f, beta = 0.f;
-    auto cublas_fn = [&]() { cublas_ref(handle, d_A, d_B, d_C_ref, M, N, K); };
-    auto s_cublas  = measure(cublas_fn);
-    printf("cuBLAS           median %7.3f ms  min %7.3f ms  max %7.3f ms  |  %6.2f TFLOPS\n",
-           s_cublas.median, s_cublas.min, s_cublas.max,
-           flops / s_cublas.median / 1e9);
+    auto cublas_fn = [&](int idx) { 
+        cublas_ref(handle, d_A[idx], d_B[idx], d_C_ref[idx], M, N, K); 
+    };
+    auto s_cublas = measure_circular(cublas_fn, NUM_BUFFERS);
+    report("cuBLAS", s_cublas, flops);
 
-    // ── benchmark DoubleBuffering2 ────────────────────────────────────────────
-    auto ref_fn   = [&]() { launch_ref(d_A, d_B, d_C_custom, M, N, K); };
-    auto s_ref    = measure(ref_fn);
-    printf("DoubleBuffering2 median %7.3f ms  min %7.3f ms  max %7.3f ms  |  %6.2f TFLOPS\n",
-           s_ref.median, s_ref.min, s_ref.max,
-           flops / s_ref.median / 1e9);
-
-    // ── benchmark GEMM_tc ─────────────────────────────────────────────────────
-    auto tc_fn    = [&]() { launch_tc(d_A, d_B, d_C_tc, dbg, M, N, K); };
-    auto s_tc     = measure(tc_fn);
-    printf("GEMM_tc          median %7.3f ms  min %7.3f ms  max %7.3f ms  |  %6.2f TFLOPS\n",
-           s_tc.median, s_tc.min, s_tc.max,
-           flops / s_tc.median / 1e9);
-    
-    long long h_dbg[3 * nblocks];
-    cudaMemcpy(h_dbg, dbg, 3*nblocks*sizeof(long long), cudaMemcpyDeviceToHost);
-
-    // average across blocks
-    long long avgWait = 0, avgCompute = 0;
-    for (int b = 0; b < nblocks; b++) {
-        avgWait    += h_dbg[3*b + 0];
-        avgCompute += h_dbg[3*b + 1];
-    }
-    printf("avg wait cycles per block:    %lld\n", avgWait / nblocks);
-    printf("avg compute cycles per block: %lld\n", avgCompute / nblocks);
-    printf("wait / compute ratio:         %.3f\n", 
-        (float)avgWait / (float)avgCompute);
-        
+    // ── benchmark kernel ──────────────────────────────────────────────────────
+    auto kernel_fn = [&](int idx) { 
+        launch_tc(d_A[idx], d_B[idx], d_C_k[idx], M, N, K); 
+    };
+    auto s_kernel = measure_circular(kernel_fn, NUM_BUFFERS);
+    report("kernel", s_kernel, flops);
 
     // ── summary ───────────────────────────────────────────────────────────────
-    printf("\nSpeedup vs cuBLAS:  DoubleBuffering2 %.2fx  |  GEMM_tc %.2fx\n",
-           s_cublas.median / s_ref.median,
-           s_cublas.median / s_tc.median);
+    printf("\nSpeedup vs cuBLAS (median):  kernel %.2fx\n",
+           s_cublas.median / s_kernel.median);
+    printf("Speedup vs cuBLAS (avg):     kernel %.2fx\n",
+           s_cublas.avg / s_kernel.avg);
 
     // ── cleanup ───────────────────────────────────────────────────────────────
-    cudaFree(d_A); cudaFree(d_B);
-    cudaFree(d_C_ref); cudaFree(d_C_custom); cudaFree(d_C_tc);
+    for (int b = 0; b < NUM_BUFFERS; b++) {
+        cudaFree(d_A[b]);
+        cudaFree(d_B[b]);
+        cudaFree(d_C_ref[b]);
+        cudaFree(d_C_k[b]);
+    }
+    delete[] d_A;
+    delete[] d_B;
+    delete[] d_C_ref;
+    delete[] d_C_k;
+
     cublasDestroy(handle);
     return 0;
 }

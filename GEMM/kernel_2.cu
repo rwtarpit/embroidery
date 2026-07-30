@@ -1,11 +1,3 @@
-/*
-kernel 1
-each block computes a tile of output tile(BMxBN)
-each warp in block computes (BM/TILE_SIZE_M, BN/TILE_SIZE_N)
-for tf32, fragment size = (16,16,8)
-so each warp loops over 2 subtiles of A (using another subloop) with inner loop over all tiles of B (with subloop)
-*/
-
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
@@ -33,7 +25,6 @@ __device__ __forceinline__ int swizzle(int row, int col) {
     
     return row * COLS + col_swizzled;
 }
-// swizzle(innerColA*4 + 0, innerRowA + offset, BM)
 
 
 namespace wt {
@@ -65,7 +56,7 @@ namespace wt {
 }
 
 template<uint BM, uint BN, uint BK, uint NUM_THREADS, uint accum_size, uint NUM_STAGES>
-__global__ void GEMM_tc(float* A, float*B, float*C, long long* dbg, int N, int M, int K){
+__global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
 
     int tile_col = blockIdx.x;
     int tile_row = blockIdx.y;
@@ -83,7 +74,6 @@ __global__ void GEMM_tc(float* A, float*B, float*C, long long* dbg, int N, int M
     
     A += K * BM * tile_row;
     B += BN * tile_col;
-    //C += K*BM*tile_row + tile_col*BN + warp_id*TILE_SIZE_N;
 
     const uint innerRowA = threadIdx.x / (BK / 4);   // which row
     const uint innerColA = threadIdx.x % (BK / 4);   // which float4 chunk
@@ -102,8 +92,6 @@ __global__ void GEMM_tc(float* A, float*B, float*C, long long* dbg, int N, int M
 
         for(int warp_tile_A=0; warp_tile_A<TILES_PER_WARP_M; ++warp_tile_A){
             for(int inner_tile=0; inner_tile<BK/TILE_SIZE_K; ++inner_tile){
-                //int offset_As = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M * BK + inner_tile * TILE_SIZE_K;
-                //float* tile_A_ptr = &As[offset_As];
                 int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
                 // load sub tile A in register fragments (swizzled)
                 float fa0 = As[swizzle<BM,BK>(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group)];

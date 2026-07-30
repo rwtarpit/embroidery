@@ -43,8 +43,6 @@ __device__ void loadFromGmem(int N, int K, const float *A, const float *B,
   }
 }
 
-// ---- REPLACES processFromSmem: warp-collective WMMA compute ----
-// Note: no more per-thread TM/TN register tile — the whole warp jointly
 // computes WMITER x WNITER fragments of shape WMMA_M x WMMA_N per warp-tile.
 template <const int BM, const int BN, const int BK, const int WM, const int WN,
           const int WMITER, const int WNITER, const int WMMA_M,
@@ -54,8 +52,6 @@ __device__ void processFromSmemWMMA(
         accum[WMITER][WNITER],
     const float *As, const float *Bs, const uint warpRow, const uint warpCol) {
   for (uint dotIdx = 0; dotIdx < BK; dotIdx += WMMA_K) {
-    // As is stored as A^T with leading dim BM (col-major view of A) -- see
-    // loadFromGmem: As[(k)*BM + m] == A_tile[m][k].
     wmma::fragment<wmma::matrix_a, WMMA_M, WMMA_N, WMMA_K,
                     wmma::precision::tf32, wmma::col_major>
         aFrag[WMITER];
@@ -104,7 +100,7 @@ __device__ void processFromSmemWMMA(
 template <const int BM, const int BN, const int BK, const int NUM_THREADS, const int ACCUM_SIZE,
           const int NUM_STAGES>
 __global__ void __launch_bounds__(NUM_THREADS)
-    GEMM_tc(float *A, float *B, float *C, long long* dbg, int M, int N, int K) {
+    GEMM_tc(float *A, float *B, float *C, int M, int N, int K) {
   const uint cRow = blockIdx.y;
   const uint cCol = blockIdx.x;
 

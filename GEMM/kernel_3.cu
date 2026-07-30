@@ -1,11 +1,3 @@
-/*
-kernel 2
-each block computes a tile of output tile(BMxBN)
-each warp in block computes (BM/TILE_SIZE_M, BN/TILE_SIZE_N)
-for tf32, fragment size = (16,16,8)
-so each warp loops over 2 subtiles of A (using another subloop) with inner loop over all tiles of B (with subloop)
-*/
-
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
@@ -90,7 +82,6 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
     
     A += K * BM * tile_row;
     B += BN * tile_col;
-    //C += K*BM*tile_row + tile_col*BN + warp_id*TILE_SIZE_N;
 
     const uint innerRowA = threadIdx.x / (BK / 4);   // which row
     const uint innerColA = threadIdx.x % (BK / 4);   // which float4 chunk
@@ -107,10 +98,7 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
     for(int i=0; i<NUM_STAGES-1 && i<NUM_TILES; ++i, ++fetch){
         wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
             N, K, A + fetch * BK, B + (size_t)fetch * BK * N, As[i], Bs[i], innerRowA, innerColA, innerRowB, innerColB, barriers[i]);
-        //tokens[i] = barriers[i].arrive();
     }
-    //auto token = barriers[0].arrive(); 
-    //barriers[0].wait(std::move(token));
 
 
     // outer-most loop over block tiles
@@ -123,7 +111,6 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
         if(fetch < NUM_TILES){
             wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
             N, K, A + fetch * BK, B + (size_t)fetch * BK * N, As[next_fetch], Bs[next_fetch], innerRowA, innerColA, innerRowB, innerColB, barriers[next_fetch]);
-            //tokens[next_fetch] = barriers[next_fetch].arrive();
             ++fetch;
             //__syncthreads();
         }
@@ -131,8 +118,6 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
 
         for(int warp_tile_A=0; warp_tile_A<TILES_PER_WARP_M; ++warp_tile_A){
             for(int inner_tile=0; inner_tile<BK/TILE_SIZE_K; ++inner_tile){
-                //int offset_As = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M * BK + inner_tile * TILE_SIZE_K;
-                //float* tile_A_ptr = &As[offset_As];
                 int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
                 // load sub tile A in register fragments (swizzled)
                 float fa0 = As[cur_stage][swizzle<BM,BK>(warp_row_base + group_id,     inner_tile * TILE_SIZE_K + thread_in_group)];
@@ -160,7 +145,7 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                     asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b0) : "f"(fb0));
                     asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b1) : "f"(fb1));
 
-                    // compute using mma ptx
+                    //  mma ptx
                     asm volatile(
                         "mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32 "
                         "{%0, %1, %2, %3}, "
@@ -175,7 +160,6 @@ __global__ void GEMM_tc(float* A, float*B, float*C, int N, int M, int K){
                 }
             }
         }    
-        //barriers[next_fetch].wait(std::move(token));
         //__syncthreads();
     }
 

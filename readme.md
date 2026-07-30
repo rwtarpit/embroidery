@@ -6,9 +6,9 @@ This repo consists of my kernels written in CUDA, Triton, etc and serve as my ow
 
 GEMM stands for General Matrix Multiplication i.e `C = A x B` in linear algebra. GEMM kernel is the most important kernel in AI workloads as more than 80% of computation in LLMS and other transformer based models consists of GEMM. Accelerating GEMM is directly equivalent of accelerating naively set AI workloads by more than half alone.
 
-Currently I am working on GEMM from scratch in CUDA for TF32(19 bits for maths) workloads. While working on GEMM in general I found resources for fp16/bf16 and even fp8 workloads to be quite nicely documented for almost all modern generations of GPUS (Ampere, Hopper and Blackwell) but couldn't find much on TF32 and Tensor Cores coupled together. Hence I decided to try myself.
+While working on GEMM in general I found resources for fp16/bf16 and even fp8 workloads to be quite nicely documented for almost all modern generations of GPUS (Ampere, Hopper and Blackwell) but couldn't find much on TF32 and Tensor Cores coupled together. Hence I decided to try myself.
 
-Do check [Beating CuBLAS on GEMM](https://github.com/rwtarpit/embroidery/tree/main/GEMM) to follow along.
+Do check [Beating CuBLAS on GEMM](https://github.com/rwtarpit/embroidery/tree/main/GEMM). I was able to squeeze near CuBLAS performance on 4096^3 input matrices.
 
 ## MLA 
 

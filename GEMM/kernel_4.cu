@@ -1,15 +1,8 @@
-/*
-each block computes a tile of output tile(BMxBN)
-each warp in block computes (BM/TILE_SIZE_M, BN/TILE_SIZE_N)
-for tf32, fragment size = (16,16,8)
-so each warp loops over 2 subtiles of A (using another subloop) with inner loop over all tiles of B (with subloop)
-*/
-
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cooperative_groups.h>
-#include <cuda/pipeline>   // replaces cuda/barrier
+#include <cuda/pipeline>   
 #include <mma.h>
 using namespace nvcuda;
 
@@ -34,6 +27,7 @@ __device__ __forceinline__ int swizzle(int row, int col) {
     return row * COLS + col_swizzled;
 }
 
+
 namespace wt {
     template <const int BM, const int BN, const int BK, const int rowStrideA,
               const int rowStrideB>
@@ -43,8 +37,7 @@ namespace wt {
                                  cuda::pipeline<cuda::thread_scope_block> &pipe) {
 
         // producer_acquire must be called before submitting async copies
-        // (caller is responsible — see main loop)
-
+#pragma unroll
         for (uint offset = 0; offset + rowStrideA <= BM; offset += rowStrideA) {
             int swizzled_offset = swizzle<BM, BK>(innerRowA + offset, innerColA * 4);
             cuda::memcpy_async(
@@ -53,6 +46,7 @@ namespace wt {
                 cuda::aligned_size_t<sizeof(float4)>(sizeof(float4)),
                 pipe);
         }
+#pragma unroll
         for (uint offset = 0; offset + rowStrideB <= BK; offset += rowStrideB) {
             int swizzled_offset = swizzle<BK, BN>(innerRowB + offset, innerColB * 4);
             cuda::memcpy_async(
@@ -65,16 +59,19 @@ namespace wt {
 }
 
 template<uint BM, uint BN, uint BK, uint NUM_THREADS, uint ACCUM_SIZE, uint NUM_STAGES>
-__global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float* C, long long* dbg, int N, int M, int K) {
+__global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float* C, int N, int M, int K) {
 
-    long long waitTime = 0, computeTime = 0;
-    long long start;
 
     auto block = cooperative_groups::this_thread_block();
 
     // pipeline shared state 
     __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, NUM_STAGES> pipe_state;
     auto pipe = cuda::make_pipeline(block, &pipe_state);
+
+    //dim3 swizzled_id = gemm_swizzle<3>(blockIdx, gridDim);
+
+    //int tile_col = swizzled_id.x;
+    //int tile_row = swizzled_id.y;
 
     int tile_col = blockIdx.x;
     int tile_row = blockIdx.y;
@@ -86,11 +83,10 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
     int lane_id = threadIdx.x % 32;
     int group_id        = lane_id >> 2;     // lane_id/4
     int thread_in_group = lane_id % 4;
-    constexpr uint total_warps      = NUM_THREADS / WARP_SIZE;           // 4
-    //constexpr uint TILES_PER_WARP_M = (BM / total_warps) / TILE_SIZE_M; // 2 16x16 tiles per warp
-    //constexpr uint TILES_PER_WARP_N = BN / TILE_SIZE_N;                 // 16 tiles (8x8)
-    constexpr uint warp_m = warp_id % 4;
-    constexpr uint warp_n = warp_id / 4;
+    constexpr uint TILES_PER_WARP_M = (BM / 4) / TILE_SIZE_M;  // (256/4)/16 = 4
+    constexpr uint TILES_PER_WARP_N = (BN / 2) / TILE_SIZE_N;  // (128/2)/8  = 8
+    const uint warp_m = warp_id % 4;
+    const uint warp_n = warp_id / 4;
 
     A += K * BM * tile_row;
     B += BN * tile_col;
@@ -105,10 +101,8 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
 
     float accum[ACCUM_SIZE] = {0.0f};
 
-    // -----------------------------------------------------------------------
     // Prologue: fill NUM_STAGES-1 buffers without waiting
     // producer_acquire + memcpy_async + producer_commit for each stage
-    // -----------------------------------------------------------------------
     int fetch = 0;
     for (int i = 0; i < NUM_STAGES - 1 && i < (int)NUM_TILES; ++i, ++fetch) {
         pipe.producer_acquire();                       // claim stage slot
@@ -121,14 +115,11 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         pipe.producer_commit();                        // signal copies submitted
     }
 
-    // -----------------------------------------------------------------------
     // outer-most loop over block tiles
-    // -----------------------------------------------------------------------
     for (uint tile = 0; tile < NUM_TILES; ++tile) {
         int cur_stage  = tile  % NUM_STAGES;
         int next_stage = fetch % NUM_STAGES;   // where the next fetch lands
 
-        // --- overlap: kick off next async fetch BEFORE waiting on cur_stage ---
         if (fetch < (int)NUM_TILES) {
             pipe.producer_acquire();
             wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
@@ -142,22 +133,16 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         }
 
         uint32_t frag_A[4];
-        //uint32_t frag_B[2];
-        float* As_ptr;
-        float* Bs_ptr;
-        // wait until cur_stage data is fully in smem, then release the slot
-        start = clock64();
+        uint32_t frag_B[2];
         pipe.consumer_wait();
-        waitTime += clock64() - start;
 
-        // -----------------------------------------------------------------------
         // compute on cur_stage smem tile
-        // -----------------------------------------------------------------------
-        start = clock64();
-        for (int warp_tile_A = 0; warp_tile_A < TILES_PER_WARP_M; ++warp_tile_A) {
-            for (int inner_tile = 0; inner_tile < BK / TILE_SIZE_K; ++inner_tile) {
-
-                int warp_row_base = (warp_id * TILES_PER_WARP_M + warp_tile_A) * TILE_SIZE_M;
+#pragma unroll
+        for (int inner_tile = 0; inner_tile < BK / TILE_SIZE_K; ++inner_tile) {
+#pragma unroll
+            for (int i = 0; i < TILES_PER_WARP_M; ++i) {
+            
+                int warp_row_base = (warp_m * (BM/4) +  i*TILE_SIZE_M);
                 // Each thread provides address of its row within its assigned sub-tile
                 int row_in_tile = lane_id % 16;   // 0-15: natural row within the 16-row tile
                 int k_half      = lane_id / 16;   // 0 or 1: selects K-cols 0-3 or 4-7
@@ -173,23 +158,20 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                     : "=r"(frag_A[0]), "=r"(frag_A[1]), "=r"(frag_A[2]), "=r"(frag_A[3]) // Outputs
                     : "r"(As_ptr_)                                                          // Input
                 );
-
-                for (int warp_tile_B = 0; warp_tile_B < TILES_PER_WARP_N; ++warp_tile_B) {
+            
+#pragma unroll
+                for (int j = 0; j < TILES_PER_WARP_N; ++j) {
 
                     int b_row_base = inner_tile * TILE_SIZE_K;  // which K-subtile (0 or 8)
-                    int b_col_base = warp_tile_B * TILE_SIZE_N; // which N-tile
+                    int b_col_base = warp_n*(BN/2) + (j * TILE_SIZE_N); // which N-tile
                     
                     int swizzled_offset_B0 = swizzle<BK, BN>(b_row_base + thread_in_group, b_col_base + group_id);
                     int swizzled_offset_B1 = swizzle<BK, BN>(b_row_base + thread_in_group + 4, b_col_base + group_id);
 
-                    float fb0 = Bs[cur_stage][swizzled_offset_B0];
-                    float fb1 = Bs[cur_stage][swizzled_offset_B1];
-
-                    uint32_t b0, b1;
-                    asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b0) : "f"(fb0));
-                    asm("cvt.rna.tf32.f32 %0, %1;" : "=r"(b1) : "f"(fb1));
+                    frag_B[0] = __float_as_uint(Bs[cur_stage][swizzled_offset_B0]);
+                    frag_B[1] = __float_as_uint(Bs[cur_stage][swizzled_offset_B1]);
+                
                     
-
                     // compute using mma ptx
                     asm volatile(
                         "mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32 "
@@ -197,47 +179,47 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
                         "{%4, %5, %6, %7}, "
                         "{%8, %9}, "
                         "{%0, %1, %2, %3};"
-                        : "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 0]),
-                          "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 1]),
-                          "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 2]),
-                          "+f"(accum[(warp_tile_A * TILES_PER_WARP_N + warp_tile_B) * 4 + 3])
+                        : "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 0]),
+                          "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 1]),
+                          "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 2]),
+                          "+f"(accum[(i * TILES_PER_WARP_N + j) * 4 + 3])
                         : "r"(frag_A[0]), "r"(frag_A[1]), "r"(frag_A[2]), "r"(frag_A[3]),
-                          "r"(b0), "r"(b1)
+                          "r"(frag_B[0]), "r"(frag_B[1])
                     );
                 }
             }
         }
-        computeTime += clock64() - start;
 
         pipe.consumer_release();   // free cur_stage slot for reuse by producer
+    
     }
-    if (threadIdx.x == 0) {
-        int b = blockIdx.y * gridDim.x + blockIdx.x;
-        dbg[3*b + 0] = waitTime;
-        dbg[3*b + 1] = computeTime;
-        dbg[3*b + 2] = (long long)NUM_TILES;
-    }
+    
 
-    // -----------------------------------------------------------------------
     // Store
-    // -----------------------------------------------------------------------
+#pragma unroll
     for (int tile_a = 0; tile_a < TILES_PER_WARP_M; ++tile_a) {
+#pragma unroll
         for (int tile_b = 0; tile_b < TILES_PER_WARP_N; ++tile_b) {
 
-            int warp_row_offset = (warp_id * TILES_PER_WARP_M + tile_a) * TILE_SIZE_M;
-            int warp_col_offset = tile_b * TILE_SIZE_N;
+             int acc_base = (tile_a * TILES_PER_WARP_N + tile_b) * 4;
 
-            int base = (tile_a * TILES_PER_WARP_N + tile_b) * 4;
+            int row_base = tile_row * BM
+                         + warp_m * (BM / 4)          // which M-partition this warp owns
+                         + tile_a * TILE_SIZE_M;       // which 16-row tile within partition
 
-            int row_top = tile_row * BM + warp_row_offset + group_id;
-            int row_bot = tile_row * BM + warp_row_offset + group_id + 8;
-            int col_0   = tile_col * BN + warp_col_offset + thread_in_group * 2;
-            int col_1   = tile_col * BN + warp_col_offset + thread_in_group * 2 + 1;
+            int col_base = tile_col * BN
+                         + warp_n * (BN / 2)          // which N-partition this warp owns
+                         + tile_b * TILE_SIZE_N;       // which 8-col tile within partition
 
-            C[row_top * N + col_0] = accum[base + 0];  // d0
-            C[row_top * N + col_1] = accum[base + 1];  // d1
-            C[row_bot * N + col_0] = accum[base + 2];  // d2
-            C[row_bot * N + col_1] = accum[base + 3];  // d3
+            int row_top = row_base + group_id;
+            int row_bot = row_base + group_id + 8;
+            int col_0   = col_base + thread_in_group * 2;
+            int col_1   = col_base + thread_in_group * 2 + 1;
+
+            C[row_top * N + col_0] = accum[acc_base + 0];  // d0
+            C[row_top * N + col_1] = accum[acc_base + 1];  // d1
+            C[row_bot * N + col_0] = accum[acc_base + 2];  // d2
+            C[row_bot * N + col_1] = accum[acc_base + 3];  // d3
         }
     }
 }

@@ -1,6 +1,3 @@
-// 95% on 256x32x128 tile size. simplifies main loop for exact 2 stages pipeline using xor bit flip instead
-// of tracking no. of tiles consumed
-
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
@@ -13,7 +10,6 @@ using namespace nvcuda;
 #define TILE_SIZE_N 8
 #define TILE_SIZE_K 8
 #define WARP_SIZE 32
-//#define NUM_STAGES 2   // hardcoded: this version assumes a double-buffered pipeline
 
 __device__ __forceinline__ int SWIZZLE_A(int row, int col) {
     return (row * 32) + (col ^ ((row & 7) << 2));
@@ -54,7 +50,7 @@ namespace wt {
 }
 
 template<uint BM, uint BN, uint BK, uint NUM_THREADS, uint ACCUM_SIZE, uint NUM_STAGES>
-__global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float* C, long long* dbg, int N, int M, int K) {
+__global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float* C, int N, int M, int K) {
 
     (void)dbg;
 
@@ -65,8 +61,6 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
     int tile_col = (linear_id % SWIZZLE_W) + (linear_id / (SWIZZLE_W * gridDim.y)) * SWIZZLE_W;
     int tile_row = (linear_id / SWIZZLE_W) % gridDim.y;
 
-    // --- shared memory: only the double-buffered A/B tiles now.
-    // No more Cs aliasing — the epilogue writes straight to global memory. ---
     struct SharedTiles {
         float As[NUM_STAGES][BM * BK];
         float Bs[NUM_STAGES][BK * BN];
@@ -95,14 +89,13 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
 
     float accum[ACCUM_SIZE] = {0.0f};
 
-    // Warp/lane-derived offsets used by the compute body — constant across
-    // all K-tiles, so hoisted out here instead of being recomputed per tile.
+    // Warp/lane-derived constant offsets used by the compute loop
     int b_base = warp_n * (BN / 2);
     int row_in_tile = lane_id % 16;
     int k_half      = lane_id / 16;
     const uint warp_row_partition = warp_m * (BM / 4);
 
-    // ---------------- Prologue: load tile 0 into stage 0 ----------------
+    // prologue
     int stage = 0;
     wt::loadFromGmem<BM, BN, BK, rowStrideA, rowStrideB>(
         N, K, A, B, smem.As[0], smem.Bs[0],
@@ -111,8 +104,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
     asm volatile("cp.async.wait_group 0;\n" ::);
     __syncthreads();
 
-    // ldmatrix + mma pass over one already-resident stage. Shared across the
-    // main loop and the pulled-out tail so there's no duplicated asm.
+    // main loop
     auto computeStage = [&](int st) {
         uint32_t frag_A[TILES_PER_WARP_M][4];
         uint32_t frag_B[TILES_PER_WARP_N][2];
@@ -185,10 +177,7 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         }
     };
 
-    // ---------------- Main loop: NUM_TILES - 1 steady-state iterations ----------------
-    // Each iteration prefetches tile+1 into the *other* buffer, computes on
-    // the current buffer while that copy is in flight, then waits for it
-    // before flipping the stage bit.
+    // Main loop: NUM_TILES - 1
     for (uint tile = 0; tile + 1 < NUM_TILES; ++tile) {
         int cur = stage;
         int nxt = cur ^ 1;   // XOR toggle — no fetch counter, no modulo
@@ -209,13 +198,10 @@ __global__ void __launch_bounds__(NUM_THREADS) GEMM_tc(float* A, float* B, float
         stage = nxt;
     }
 
-    // ---------------- Tail: final tile, no prefetch/wait needed ----------------
+    // final tile in smem
     computeStage(stage);
 
-    // ---------------- Epilogue: direct float2 stores to global memory ----------------
-    // No shared-memory staging, no swizzle, no barriers — every thread's
-    // accum values are already final and private, so they can go straight
-    // to C.
+    // epilogue
 #pragma unroll
     for (int tile_a = 0; tile_a < (int)TILES_PER_WARP_M; ++tile_a) {
 #pragma unroll

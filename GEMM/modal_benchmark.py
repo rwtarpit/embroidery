@@ -24,60 +24,61 @@ def run_benchmark(bench_src: str, gemm_ref: str, gemm_tc: str):
 
     arch = "sm_80"
 
-    # ── 1. Compile performance binary (no -G) and benchmark ─────────────────
-    print("--- Compiling performance binary ---")
-    subprocess.run([
-        "nvcc", "-O3", "-arch=" + arch,
-        "-o", "bench_perf",
-        "benchmark.cu", "-lcublas",
-    ], check=True)
+    # ── 1. Single binary: -O3 -lineinfo -maxrregcount — exact perf SASS ─────
+    # ── 1. Single binary: -O3 -lineinfo -maxrregcount — exact perf SASS ─────
+    print("--- Compiling binary ---")
+    try:
+        compile_result = subprocess.run([
+            "nvcc", "-O3", "-lineinfo",
+            "-Xptxas=-v",
+            "-maxrregcount=250",
+            "-arch=" + arch,
+            "-o", "bench",
+            "benchmark.cu", "-lcublas",
+        ], check=True, capture_output=True, text=True)
+        
+        # If it succeeds, print ptxas info
+        print(compile_result.stderr)
+        ptxas_info = compile_result.stderr
 
+    except subprocess.CalledProcessError as e:
+        print("\n!!! NVCC Compilation Failed !!!")
+        print("--- STDOUT ---")
+        print(e.stdout)
+        print("--- STDERR ---")
+        print(e.stderr)  # CUDA C++ compilation errors!
+        
+        # Gracefully return the compiler error so it writes to your local file
+        return f"NVCC Compilation Error:\n{e.stderr}"
+    # ── 2. Run benchmark ─────────────────────────────────────────────────────
     print("--- Running Performance Benchmark vs cuBLAS ---")
-    subprocess.run(["./bench_perf"], check=True)
+    subprocess.run(["./bench"], check=True)
 
-    # ── 2. Compile benchmark.cu with -G to embed full source debug info ──────
-    #    This is the ONLY file that needs to be compiled — the kernel files
-    #    are #included into it (they're headers, not standalone TUs).
-    print("--- Compiling debug binary (for SASS interleaving) ---")
-    subprocess.run([
-        "nvcc",
-        "-O3",
-        "-lineinfo",
-        "-arch=" + arch,
-        "-o", "bench_debug",
-        "benchmark.cu", "-lcublas",
-    ], check=True)
-
-    # ── 3. Extract all embedded ELF cubins from the debug binary ────────────
-    #    cuobjdump --extract-elf dumps one .cubin per kernel into ./cubins/
+    # ── 3. Extract cubins from the same binary ───────────────────────────────
     print("--- Extracting embedded cubins ---")
     os.makedirs("cubins", exist_ok=True)
     os.chdir("cubins")
     subprocess.run(
-        ["cuobjdump", "--extract-elf", "all", "../bench_debug"],
+        ["cuobjdump", "--extract-elf", "all", "../bench"],
         check=True
     )
     os.chdir("/root")
 
     cubin_files = sorted(glob.glob("cubins/*.cubin"))
     print(f"Found cubins: {cubin_files}")
-
     if not cubin_files:
-        # Fallback: some CUDA versions name them differently
         cubin_files = sorted(glob.glob("cubins/*"))
         print(f"Fallback glob found: {cubin_files}")
 
-    # ── 4. Run nvdisasm -c on each cubin ────────────────────────────────────
-    combined = ""
+    # ── 4. nvdisasm -c on each cubin ─────────────────────────────────────────
+    sass_combined = ""
     for cubin in cubin_files:
         print(f"--- Disassembling {cubin} ---")
 
-        # First, peek at what kernels are in this cubin
         info = subprocess.run(
             ["nvdisasm", "--print-kernel-header", cubin],
             capture_output=True, text=True
         )
-
         result = subprocess.run(
             ["nvdisasm", "-c", "-g", cubin],
             capture_output=True, text=True
@@ -87,23 +88,26 @@ def run_benchmark(bench_src: str, gemm_ref: str, gemm_tc: str):
             print(f"  nvdisasm error: {result.stderr[:200]}")
             continue
 
-        combined += f"\n\n{'='*80}\n  CUBIN: {os.path.basename(cubin)}\n{'='*80}\n"
-        combined += info.stdout + "\n"
-        combined += result.stdout
+        sass_combined += f"\n\n{'='*80}\n  CUBIN: {os.path.basename(cubin)}\n{'='*80}\n"
+        sass_combined += info.stdout + "\n"
+        sass_combined += result.stdout
 
-    if not combined.strip():
-        # ── 5. Nuclear fallback: cuobjdump --dump-sass --dump-ptx ───────────
-        #    PTX preserves source line comments even without nvdisasm
+    if not sass_combined.strip():
         print("--- Fallback: cuobjdump PTX+SASS dump ---")
-        for flag, ext in [("--dump-ptx", "ptx"), ("--dump-sass", "sass")]:
+        for flag in ["--dump-ptx", "--dump-sass"]:
             r = subprocess.run(
-                ["cuobjdump", flag, "bench_debug"],
+                ["cuobjdump", flag, "bench"],
                 capture_output=True, text=True
             )
-            combined += f"\n\n{'='*80}\n  {flag.upper()}\n{'='*80}\n"
-            combined += r.stdout
+            sass_combined += f"\n\n{'='*80}\n  {flag.upper()}\n{'='*80}\n"
+            sass_combined += r.stdout
 
-    return combined
+    # ── 5. Combine ptxas info header + SASS ──────────────────────────────────
+    output = f"{'='*80}\n  REGISTER & SMEM USAGE (ptxas -v)\n{'='*80}\n"
+    output += ptxas_info + "\n"
+    output += sass_combined
+
+    return output
 
 
 @app.local_entrypoint()
@@ -112,7 +116,7 @@ def main():
     gemm_ref  = pathlib.Path("pmpp_v2/matmul_py/gemm_ref.cu").read_text()
     gemm_tc   = pathlib.Path("pmpp_v2/matmul_py/gemm_swizzle.cu").read_text()
 
-    sass_output = run_benchmark.remote(bench_src, gemm_ref, gemm_tc)
+    output = run_benchmark.remote(bench_src, gemm_ref, gemm_tc)
 
-    pathlib.Path("output_interleaved.sass").write_text(sass_output)
-    print(f"\n[Success] Interleaved SASS saved to: output_interleaved.sass")
+    pathlib.Path("output_interleaved.sass").write_text(output)
+    print("\n[Success] Saved to: output_interleaved.sass")
