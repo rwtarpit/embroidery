@@ -5,7 +5,6 @@ import cutlass.pipeline as pipeline
 import cutlass.utils as utils
 from cutlass.pipeline import pipeline_init_arrive, pipeline_init_wait
 import cutlass.utils.hopper_helpers as sm90_utils
-
 import cuda.bindings.driver as cuda
 import math
 
@@ -17,7 +16,8 @@ class GEMM():
         cluster_shape_mn: tuple[int, int],
         swizzle_size: int,
         raster_along_m: bool,
-        mma_promotion_interval: int = 4,
+        mma_promotion_interval: int,
+        max_active_clusters: int
     ):
         self.acc_dtype = cutlass.Float32
         self.mma_promotion_interval = mma_promotion_interval
@@ -25,6 +25,7 @@ class GEMM():
         self.raster_among_m = raster_along_m
         self.tile_shape_mn = tile_shape_mn
         self.cluster_shape_mn = cluster_shape_mn
+        self.max_active_clusters = max_active_clusters
         
         self.mma_layout_mnk = (2,1,1)
         self.num_wg_mma = math.prod(self.mma_layout_mnk)
@@ -78,7 +79,7 @@ class GEMM():
         #self.tile_shape_mnk = (self.tile_shape_mn, num_k_blocks)
         is_cooperative = self.mma_layout_mnk == (2, 1, 1)
         self.epi_tile = self._sm90_compute_tile_shape_or_override(
-            self.tile_shape_mnk, self.c_dtype, is_cooperative=is_cooperative
+            self.tile_shape_mnk, self.c_dtype, is_cooperative=is_cooperative, epi_tile_override=(128, 64)
         )
         self.cluster_layout_mn = cute.make_layout((self.cluster_shape_mn))
         self.num_mcast_ctas_a = self.cluster_shape_mn[1]
@@ -269,7 +270,6 @@ class GEMM():
         c: cute.Tensor,
         scale_a: cute.Tensor,
         scale_b: cute.Tensor,
-        max_active_clusters,
         stream: cuda.CUstream
         ):
         self.a_dtype = a.element_type
@@ -327,6 +327,7 @@ class GEMM():
             mainloop_pipeline_array_ptr: cute.struct.MemRange[
                 cutlass.Int64, self.num_stages * 2
             ]
+    
         self.shared_storage = SharedStorage
         
         tile_sched_params, grid = self._compute_grid(
@@ -335,7 +336,7 @@ class GEMM():
             self.cluster_shape_mn,
             self.swizzle_size,
             self.raster_among_m,
-            max_active_clusters
+            self.max_active_clusters
         )
         
         self.kernel(
@@ -415,7 +416,7 @@ class GEMM():
         )
         mcast_size = self.num_mcast_ctas_a + self.num_mcast_ctas_b - 1
         consumer_arrive_cnt = (
-            mcast_size * self.num_wg_mma * self.num_warps_per_wg
+            mcast_size * self.num_wg_mma
                 )
         consumer_empty_pipe = pipeline.CooperativeGroup(
             pipeline.Agent.Thread, consumer_arrive_cnt
@@ -525,11 +526,26 @@ class GEMM():
                 m,n = tile_coord_mnl[0], tile_coord_mnl[1]
                 tAgA_local = tAgA[(None, m, None)]
                 tBgB_local = tBgB[(None, n, None)]
+                """
+                for prefetch_tile in cutlass.range(self.num_stages, unroll=1, at_least_once=True):
+                    cute.prefetch(
+                        tma_atom_a, 
+                        tAgA_local[(None, prefetch_tile)]
+                    )
+                    cute.prefetch(
+                        tma_atom_b,
+                        tBgB_local[(None, prefetch_tile)]
+                    )"""
                 
                 mainloop_producer_state.reset_count()
+                peek_empty_status = cutlass.Boolean(1)
+                if mainloop_producer_state.count < k_tile_cnt:
+                    peek_empty_status = mainloop_pipeline.producer_try_acquire(
+                        mainloop_producer_state
+                    )
                 
-                for k_tile in range(k_tile_cnt):
-                    mainloop_pipeline.producer_acquire(mainloop_producer_state)
+                for k_tile in cutlass.range(k_tile_cnt, at_least_once=True, unroll=1):
+                    mainloop_pipeline.producer_acquire(mainloop_producer_state, peek_empty_status)
                     tAgA_k = tAgA_local[(None, mainloop_producer_state.count)]
                     tBgB_k = tBgB_local[(None, mainloop_producer_state.count)]
                     tAsA_pipe = tAsA[(None, mainloop_producer_state.index)]
@@ -554,9 +570,25 @@ class GEMM():
                         ),
                         mcast_mask = b_mcast_mask
                     )
+                    """
+                    if k_tile < k_tile_cnt - self.num_stages:
+                        next_k_tile = mainloop_producer_state.count + self.num_stages
+                        
+                        cute.prefetch(
+                            tma_atom_a, 
+                            tAgA_local[(None, next_k_tile)]
+                        )
+                        cute.prefetch(
+                            tma_atom_b,
+                            tBgB_local[(None, next_k_tile)]
+                        )"""
                     
-                    mainloop_pipeline.producer_commit(mainloop_producer_state)
                     mainloop_producer_state.advance()
+                    peek_empty_status = cutlass.Boolean(1)
+                    if mainloop_producer_state.count < k_tile_cnt:
+                        peek_empty_status = mainloop_pipeline.producer_try_acquire(
+                            mainloop_producer_state
+                        )
                     
                 tile_sched.advance_to_next_work()
                 work_tile = tile_sched.get_current_work()
@@ -573,8 +605,7 @@ class GEMM():
             )
             work_tile = tile_sched.initial_work_tile_info()
             
-            k_pipe_mmas = 1
-            prologue_mma_cnt = min(k_pipe_mmas, k_tile_cnt)
+            prologue_mma_cnt = 1
             scale_val = scale_a[0] * scale_b[0]
             num_k_blocks = cute.size(tCrA, mode=[2])
             
@@ -638,7 +669,7 @@ class GEMM():
 
                 cute.nvgpu.warpgroup.fence()
             
-                for k_tile in range(prologue_mma_cnt):
+                for k_tile in cutlass.range(prologue_mma_cnt, at_least_once=True, unroll_full=True):
                     mainloop_pipeline.consumer_wait(mainloop_consumer_read_state)
                     
                     for k_block in cutlass.range_constexpr(num_k_blocks):
@@ -671,10 +702,10 @@ class GEMM():
                     mainloop_consumer_read_state.advance()
                     
                 # Main loop
-                for k_tile in range(prologue_mma_cnt, k_tile_cnt):
+                for k_tile in cutlass.range(prologue_mma_cnt, k_tile_cnt, at_least_once=True, unroll=4):
                     mainloop_pipeline.consumer_wait(mainloop_consumer_read_state)
                     
-                    for k_block in cutlass.range_constexpr(num_k_blocks):
+                    for k_block in cutlass.range(num_k_blocks, unroll_full=True, at_least_once=True):
                         k_block_coord = (
                             None, None, k_block, mainloop_consumer_read_state.index
                         )
@@ -704,8 +735,9 @@ class GEMM():
                         tiled_mma.set(
                             cute.nvgpu.warpgroup.Field.ACCUMULATE, False
                         )
-                    mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
-                    mainloop_consumer_release_state.advance()
+                    if warp_idx % self.num_warps_per_wg == 0:
+                        mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
+                        mainloop_consumer_release_state.advance()
                     mainloop_consumer_read_state.advance()
                 
                 cute.nvgpu.warpgroup.wait_group(0)
@@ -715,12 +747,13 @@ class GEMM():
                         
                 # Release remaining pipeline stages from prologue
                 # for persistant kernel
-                for k_tile in range(prologue_mma_cnt):
-                    mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
-                    mainloop_consumer_release_state.advance()
+                if warp_idx % self.num_warps_per_wg == 0:
+                    for k_tile in range(prologue_mma_cnt):
+                        mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
+                        mainloop_consumer_release_state.advance()
 
                 # Apply scale_a * scale_b to accumulators
-                for i in range(cute.size(acc)):
+                for i in cutlass.range(cute.size(acc), unroll_full=True, at_least_once=True):
                     acc[i] = acc[i] * scale_val
                 
                 tCgC_for_tma_partition = cute.zipped_divide(gC_mn_slice, self.epi_tile)
