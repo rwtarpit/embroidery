@@ -7,7 +7,7 @@ from cutlass.pipeline import pipeline_init_arrive, pipeline_init_wait
 import cutlass.utils.hopper_helpers as sm90_utils
 import cuda.bindings.driver as cuda
 import math
-# 1345 TFLOPS
+# beats cublas; cublas - ~1550 TFLOPS, this kernel ~1580 for 4096^3
 
 class GEMM():
     def __init__(
@@ -33,34 +33,30 @@ class GEMM():
         self.num_warps_per_wg = 4
         self.threads_per_wg = self.num_warps_per_wg * 32
         self.threads_per_cta = (self.num_wg_dma + self.num_wg_mma) * self.threads_per_wg
-        self.registers_dma = 40
-        self.registers_mma = 232
+        self.registers_dma = 24
+        self.registers_mma = 240
         
         self.smem_capacity = utils.get_smem_capacity_in_bytes("sm_90")
-        self.num_stages = 3
+        self.num_stages = 4
         self.epi_num_stages = 2
-        self.epi_store_warp_id = (
-            self.num_warps_per_wg * self.num_wg_dma
-        )
+        self.epi_store_warp_id = 1
         self.num_mma_threads = (
             self.num_wg_mma * self.threads_per_wg
         )
-        self.epilog_sync_barrier = pipeline.NamedBarrier(
-            barrier_id=1, num_threads=self.num_mma_threads
-        )
+        
         self.buffer_align_bytes = 1024
         
         
     def _setup_attributes(self):
         
         self.tiled_mma = sm90_utils.make_trivial_tiled_mma(
-            self.a_dtype,
-            self.b_dtype,
-            self.a_layout.sm90_mma_major_mode(),
-            self.b_layout.sm90_mma_major_mode(),
-            self.acc_dtype,
-            self.mma_layout_mnk,
-            (64, self.tile_shape_mn[1])
+            a_dtype=self.a_dtype,
+            b_dtype=self.b_dtype,
+            a_leading_mode=self.a_layout.sm90_mma_major_mode(),
+            b_leading_mode=self.b_layout.sm90_mma_major_mode(),
+            acc_dtype=self.acc_dtype,
+            atom_layout_mnk=self.mma_layout_mnk,
+            tiler_mn=(64, self.tile_shape_mn[1])
         )
         
         mma_inst_shape_k = cute.size(self.tiled_mma.shape_mnk, mode=[2])
@@ -116,11 +112,11 @@ class GEMM():
         num_stages: int,
         epi_num_stages: int
     ):
-        a_smem_shape = cute.slice_(tile_shape_mnk, (None, 0, None))
+        a_smem_shape = cute.slice_(tile_shape_mnk, (None, 0, None)) # (m,k)
         a_is_k_major = (
             a_layout.sm90_mma_major_mode() == cute.nvgpu.OperandMajorMode.K
-        )
-        a_major_mode_size = tile_shape_mnk[2 if a_is_k_major else 0]
+        )   # True
+        a_major_mode_size = tile_shape_mnk[2 if a_is_k_major else 0]    # 2
         a_smem_layout_atom = cute.nvgpu.warpgroup.make_smem_layout_atom(
             sm90_utils.get_smem_layout_atom(
                 a_layout,
@@ -270,6 +266,7 @@ class GEMM():
         c: cute.Tensor,
         scale_a: cute.Tensor,
         scale_b: cute.Tensor,
+        #max_active_clusters: int,
         stream: cuda.CUstream
         ):
         self.a_dtype = a.element_type
@@ -326,6 +323,9 @@ class GEMM():
             ]
             mainloop_pipeline_array_ptr: cute.struct.MemRange[
                 cutlass.Int64, self.num_stages * 2
+            ]
+            epi_pipeline_array_ptr: cute.struct.MemRange[
+                cutlass.Int64, self.epi_num_stages * 2
             ]
     
         self.shared_storage = SharedStorage
@@ -385,9 +385,10 @@ class GEMM():
         warp_idx = cute.arch.warp_idx()
         warp_idx = cute.arch.make_warp_uniform(warp_idx)
         
-        if warp_idx == 0:
+        if tidx == 0:
             cute.nvgpu.cpasync.prefetch_descriptor(tma_atom_a)
             cute.nvgpu.cpasync.prefetch_descriptor(tma_atom_b)
+            cute.nvgpu.cpasync.prefetch_descriptor(tma_atom_c)
 
         cta_rank_in_cluster = cute.arch.make_warp_uniform(
             cute.arch.block_idx_in_cluster()
@@ -431,6 +432,18 @@ class GEMM():
             cta_layout_vmnk=cute.make_layout((1, *cluster_layout_mn.shape, 1)),
             defer_sync=True,
         )
+        epi_producer_group = pipeline.CooperativeGroup(
+            pipeline.Agent.Thread, self.num_mma_threads  # all MMA-WG threads collectively arrive per iteration
+        )
+        epi_consumer_group = pipeline.CooperativeGroup(
+            pipeline.Agent.Thread, 1  # single store warp's elected thread releases
+        )
+        epi_pipeline = pipeline.PipelineAsync.create(
+            barrier_storage=storage.epi_pipeline_array_ptr.data_ptr(),
+            num_stages=self.epi_num_stages,
+            producer_group=epi_producer_group,
+            consumer_group=epi_consumer_group
+        )
         
         # Cluster arrive after barrier init
         pipeline_init_arrive(cluster_shape_mn=self.cluster_shape_mn, is_relaxed=True)
@@ -465,11 +478,11 @@ class GEMM():
         a_cluster_layout = cute.make_layout(self.cluster_shape_mn[1])
         a_cta_crd = cluster_coord_mn[1]
         tAsA, tAgA = cute.nvgpu.cpasync.tma_partition(
-            tma_atom_a,
-            a_cta_crd,
-            a_cluster_layout,
-            cute.group_modes(sA, 0, 2),
-            cute.group_modes(gA_mk, 0, 2)
+            tma_atom_a,     # the tma instruciton
+            a_cta_crd,      # coord in cluster across the row
+            a_cluster_layout,   # cluster layout across the row
+            cute.group_modes(sA, 0, 2),     # groups the layout as (tile, num_stages)
+            cute.group_modes(gA_mk, 0, 2)   # groups the layout as (tile, restM, restK)
         )
         
         b_cluster_layout = cute.make_layout(self.cluster_shape_mn[0])
@@ -493,13 +506,13 @@ class GEMM():
         )
         tCsA = thr_mma.partition_A(sA)
         tCsB = thr_mma.partition_B(sB)
-        tCrA = tiled_mma.make_fragment_A(tCsA)
-        tCrB = tiled_mma.make_fragment_B(tCsB)
+        tCrA = tiled_mma.make_fragment_A(tCsA)  # doesnt allocate physical registers
+        tCrB = tiled_mma.make_fragment_B(tCsB)  # doesnt allocate physical registers
         tCgC = thr_mma.partition_C(gC_mn)
         
         acc_shape = tCgC.shape[:3]
-        partial_acc = cute.make_rmem_tensor(acc_shape, self.acc_dtype)
-        acc =  cute.make_rmem_tensor(acc_shape, self.acc_dtype)
+        partial_acc = cute.make_rmem_tensor(acc_shape, self.acc_dtype)  # allocates registers for partial_accum
+        acc =  cute.make_rmem_tensor(acc_shape, self.acc_dtype)     # allocates registers for accumulation
         
         k_tile_cnt = cute.size(gA_mk, mode=[3])
         
@@ -519,8 +532,6 @@ class GEMM():
             mainloop_producer_state = pipeline.make_pipeline_state(
                 pipeline.PipelineUserType.Producer, self.num_stages
             )
-            # b_idx = cute.arch.block_idx()
-            # m, n = b_idx[0], b_idx[1]
             while work_tile.is_valid_tile:
                 tile_coord_mnl = work_tile.tile_idx
                 m,n = tile_coord_mnl[0], tile_coord_mnl[1]
@@ -598,8 +609,6 @@ class GEMM():
         
         if not is_dma_wg:
             cute.arch.setmaxregister_increase(self.registers_mma)
-            #b_idx = cute.arch.block_idx()
-            #m, n = b_idx[0], b_idx[1] 
             tile_sched = utils.StaticPersistentTileScheduler.create(
                 tile_sched_params, cute.arch.block_idx(), cute.arch.grid_dim()
             )
@@ -630,7 +639,7 @@ class GEMM():
             )
             tiled_copy_C_Atom = cute.make_tiled_copy_C_atom(copy_atom_C, tiled_mma)
             tiled_copy_r2s = cute.make_tiled_copy_S(
-                    copy_atom_r2s,
+                    copy_atom_r2s,  # stmatrix
                     tiled_copy_C_Atom,
                 )
             # (R2S, R2S_M, R2S_N, PIPE_D)
@@ -645,18 +654,14 @@ class GEMM():
             tRS_rC_out = cute.make_rmem_tensor(tRS_rC_layout.shape, self.c_dtype)
             size_tRS_rC = cute.size(tRS_rC)
             
-            tma_store_producer_group = pipeline.CooperativeGroup(
-                pipeline.Agent.Thread, self.num_mma_threads
-            )    
-            tma_store_pipeline = pipeline.PipelineTmaStore.create(
-                num_stages=self.epi_num_stages,
-                producer_group=tma_store_producer_group
+            epi_producer_state = pipeline.make_pipeline_state(
+                pipeline.PipelineUserType.Producer, self.epi_num_stages
             )
-            
             while work_tile.is_valid_tile:
+                
                 tile_coord_mnl = work_tile.tile_idx
                 m,n = tile_coord_mnl[0], tile_coord_mnl[1]
-                gC_mn_slice = gC_mn[(None, None, m, n)]
+                #gC_mn_slice = gC_mn[(None, None, m, n)]
                 mainloop_consumer_read_state.reset_count()
                 mainloop_consumer_release_state.reset_count()
                 acc.fill(0.0)
@@ -666,7 +671,7 @@ class GEMM():
                     cute.nvgpu.warpgroup.Field.ACCUMULATE, False
                 )
                 mma_count = 0
-
+                
                 cute.nvgpu.warpgroup.fence()
             
                 for k_tile in cutlass.range(prologue_mma_cnt, at_least_once=True, unroll_full=True):
@@ -688,7 +693,9 @@ class GEMM():
                             )
                     
                     cute.nvgpu.warpgroup.commit_group()
+                    
                     mma_count += num_k_blocks
+                    
                     if mma_count == self.mma_promotion_interval:
                         cute.nvgpu.warpgroup.wait_group(0)
                         # Element-wise promotion: accumulators += accum_temp
@@ -702,10 +709,13 @@ class GEMM():
                     mainloop_consumer_read_state.advance()
                     
                 # Main loop
-                for k_tile in cutlass.range(prologue_mma_cnt, k_tile_cnt, at_least_once=True, unroll=4):
-                    mainloop_pipeline.consumer_wait(mainloop_consumer_read_state)
+                peek_full_status = cutlass.Boolean(1)
+                if mainloop_consumer_read_state.count < k_tile_cnt:
+                    peek_full_status = mainloop_pipeline.consumer_try_wait(mainloop_consumer_read_state)
+                for k_tile in cutlass.range(prologue_mma_cnt, k_tile_cnt, at_least_once=True, unroll=2):
+                    mainloop_pipeline.consumer_wait(mainloop_consumer_read_state, peek_full_status)
                     
-                    for k_block in cutlass.range(num_k_blocks, unroll_full=True, at_least_once=True):
+                    for k_block in cutlass.range_constexpr(num_k_blocks):
                         k_block_coord = (
                             None, None, k_block, mainloop_consumer_read_state.index
                         )
@@ -721,8 +731,12 @@ class GEMM():
                         )
                     cute.nvgpu.warpgroup.commit_group()
                     cute.nvgpu.warpgroup.wait_group(1)
+                    if warp_idx % self.num_warps_per_wg == 0:
+                        mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
+                        mainloop_consumer_release_state.advance()
                     
                     mma_count += num_k_blocks
+                    
                     if mma_count == self.mma_promotion_interval:
                         # Wait for all outstanding WGMMA writes to accum_temp
                         # before reading it
@@ -735,79 +749,131 @@ class GEMM():
                         tiled_mma.set(
                             cute.nvgpu.warpgroup.Field.ACCUMULATE, False
                         )
-                    if warp_idx % self.num_warps_per_wg == 0:
-                        mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
-                        mainloop_consumer_release_state.advance()
+                    
                     mainloop_consumer_read_state.advance()
+                    peek_full_status = cutlass.Boolean(1)
+                    if mainloop_consumer_read_state.count < k_tile_cnt:
+                        peek_full_status = mainloop_pipeline.consumer_try_wait(mainloop_consumer_read_state)
                 
                 cute.nvgpu.warpgroup.wait_group(0)
+                if warp_idx % self.num_warps_per_wg == 0:
+                    for k_tile in range(prologue_mma_cnt):
+                        mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
+                        mainloop_consumer_release_state.advance()
                 if mma_count > 0:
                     for i in range(cute.size(acc)):
                         acc[i] = acc[i] + partial_acc[i]
                         
                 # Release remaining pipeline stages from prologue
                 # for persistant kernel
-                if warp_idx % self.num_warps_per_wg == 0:
-                    for k_tile in range(prologue_mma_cnt):
-                        mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
-                        mainloop_consumer_release_state.advance()
+                
 
                 # Apply scale_a * scale_b to accumulators
                 for i in cutlass.range(cute.size(acc), unroll_full=True, at_least_once=True):
                     acc[i] = acc[i] * scale_val
                 
-                tCgC_for_tma_partition = cute.zipped_divide(gC_mn_slice, self.epi_tile)
-                
-                bSG_sC, bSG_gC = cute.nvgpu.cpasync.tma_partition(
-                    tma_atom_c,
-                    0,
-                    cute.make_layout(1),
-                    cute.group_modes(sC, 0, 2),
-                    tCgC_for_tma_partition
-                )
-                
-                num_epi_tiles = cute.size(tCgC_for_tma_partition, mode=[1])
-                epi_tile_shape = tCgC_for_tma_partition.shape[1]
-                epi_tile_layout = cute.make_layout(
-                    epi_tile_shape, stride=(epi_tile_shape[1], 1)
-                )
+                epi_tile_shape = cute.shape_div(self.tile_shape_mn, self.epi_tile)
+                num_epi_tiles = cute.size(epi_tile_shape)
                 
                 # TODO count stored tiles for persistant kernel
                 for epi_idx in cutlass.range_constexpr(num_epi_tiles):
+                    epi_pipeline.producer_acquire(epi_producer_state)
                     for epi_v in cutlass.range_constexpr(size_tRS_rC):
                         tRS_rC[epi_v] = tRS_rAcc[epi_idx*size_tRS_rC + epi_v]
                     
                     acc_vec = tRS_rC.load()
                     tRS_rC_out.store(acc_vec.to(self.c_dtype))
-                    
-                    epi_buffer = epi_idx % cute.size(tRS_sC, mode=[3])
-                    
+                                        
                     cute.copy(
                         tiled_copy_r2s,
                         tRS_rC_out,
-                        tRS_sC[(None, None, None, epi_buffer)]
+                        tRS_sC[(None, None, None, epi_producer_state.index)]
                     )
                     cute.arch.fence_proxy(
                         "async.shared",
                         space="cta",
                     )
-                    self.epilog_sync_barrier.arrive_and_wait()
-                    
-                    gmem_coord = epi_tile_layout.get_hier_coord(epi_idx)
-                    if warp_idx == self.epi_store_warp_id:
-                        cute.copy(
-                            tma_atom_c,
-                            bSG_sC[(None, epi_buffer)],
-                            bSG_gC[(None, gmem_coord)],
-                            # evict first
-                            cache_policy = cutlass.Int64(0x12F0000000000000)
-                        )
-                        tma_store_pipeline.producer_commit()
-                        tma_store_pipeline.producer_acquire()
-
-                    self.epilog_sync_barrier.arrive_and_wait()
-                    
+                    epi_pipeline.producer_commit(epi_producer_state)    # cheap arrive on "full" for this slot
+                    epi_producer_state.advance()
+                
                 tile_sched.advance_to_next_work()
                 work_tile = tile_sched.get_current_work()
                                 
-            tma_store_pipeline.producer_tail()
+                                        
+        if warp_idx == self.epi_store_warp_id:
+            is_elected = cute.arch.lane_idx() == 0
+            epi_consumer_state = pipeline.make_pipeline_state(
+                pipeline.PipelineUserType.Consumer, self.epi_num_stages
+            )
+            epi_release_state = pipeline.make_pipeline_state(
+                pipeline.PipelineUserType.Consumer, self.epi_num_stages
+            )
+            
+            tile_sched = utils.StaticPersistentTileScheduler.create(
+                tile_sched_params, cute.arch.block_idx(), cute.arch.grid_dim()
+            )
+            work_tile = tile_sched.initial_work_tile_info()
+            
+            while work_tile.is_valid_tile:
+                tile_coord_mnl = work_tile.tile_idx
+                m,n = tile_coord_mnl[0], tile_coord_mnl[1]
+                gC_mn_slice = gC_mn[(None, None, m, n)]     # coords of output tile
+                
+                tCgC_for_tma_partition = cute.zipped_divide(gC_mn_slice, self.epi_tile)
+                bSG_sC, bSG_gC = cute.nvgpu.cpasync.tma_partition(
+                    tma_atom_c,
+                    0,
+                    cute.make_layout(1),    # single CTA in cluster
+                    cute.group_modes(sC, 0, 2), # (frag_tile, num_epi_stages)
+                    tCgC_for_tma_partition      # (epi_tile, restM, restN)
+                )
+                
+                num_epi_tiles = cute.size(tCgC_for_tma_partition, mode=[1])
+                epi_tile_shape = tCgC_for_tma_partition.shape[1]
+                epi_tile_layout = cute.make_layout(
+                    epi_tile_shape, stride=(epi_tile_shape[1], 1))
+                prologue_epi_cnt = self.epi_num_stages - 1
+                
+                for epi_idx in cutlass.range(prologue_epi_cnt, unroll_full=True, at_least_once=True):
+                    epi_pipeline.consumer_wait(epi_consumer_state)
+                    
+                    gmem_coord = epi_tile_layout.get_hier_coord(epi_idx)
+                    cute.copy(
+                        tma_atom_c,
+                        bSG_sC[(None, epi_consumer_state.index)],
+                        bSG_gC[(None, gmem_coord)],
+                        # evict first
+                        cache_policy = cutlass.Int64(0x12F0000000000000)
+                    )
+                    cute.arch.cp_async_bulk_commit_group()
+                    cute.arch.cp_async_bulk_wait_group(1)
+                    
+                    epi_consumer_state.advance()
+                
+                for epi_idx in cutlass.range(prologue_epi_cnt, num_epi_tiles, unroll_full=True, at_least_once=True):
+                    epi_pipeline.consumer_wait(epi_consumer_state)
+                    
+                    gmem_coord = epi_tile_layout.get_hier_coord(epi_idx)
+                    cute.copy(
+                        tma_atom_c,
+                        bSG_sC[(None, epi_consumer_state.index)],
+                        bSG_gC[(None, gmem_coord)],
+                        # evict first
+                        cache_policy = cutlass.Int64(0x12F0000000000000)
+                    )
+                    cute.arch.cp_async_bulk_commit_group()
+                    cute.arch.cp_async_bulk_wait_group(1)
+                    
+                    epi_consumer_state.advance()
+                    if is_elected:
+                        epi_pipeline.consumer_release(epi_release_state)
+                        epi_release_state.advance()
+                cute.arch.cp_async_bulk_wait_group(0)
+                if is_elected:
+                    for _ in range(prologue_epi_cnt):
+                        epi_pipeline.consumer_release(epi_release_state)
+                        epi_release_state.advance()
+                
+                tile_sched.advance_to_next_work()
+                work_tile = tile_sched.get_current_work()
+                

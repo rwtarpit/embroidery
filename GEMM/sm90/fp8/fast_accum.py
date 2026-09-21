@@ -693,17 +693,6 @@ class GEMM():
                             )
                     
                     cute.nvgpu.warpgroup.commit_group()
-                    mma_count += num_k_blocks
-                    if mma_count == self.mma_promotion_interval:
-                        cute.nvgpu.warpgroup.wait_group(0)
-                        # Element-wise promotion: accumulators += accum_temp
-                        for i in range(cute.size(acc)):
-                            acc[i] = acc[i] + partial_acc[i]
-                        mma_count = 0
-                        # Signal WGMMA to zero accum_temp on next instruction
-                        tiled_mma.set(
-                            cute.nvgpu.warpgroup.Field.ACCUMULATE, False
-                        )
                     mainloop_consumer_read_state.advance()
                     
                 # Main loop
@@ -730,20 +719,7 @@ class GEMM():
                     cute.nvgpu.warpgroup.commit_group()
                     cute.nvgpu.warpgroup.wait_group(1)
                     
-                    mma_count += num_k_blocks
-                    """
-                    if mma_count == self.mma_promotion_interval:
-                        # Wait for all outstanding WGMMA writes to accum_temp
-                        # before reading it
-                        cute.nvgpu.warpgroup.wait_group(0)
-                        # Element-wise promotion: accumulators += accum_temp
-                        for i in range(cute.size(acc)):
-                            acc[i] = acc[i] + partial_acc[i]
-                        mma_count = 0
-                        # Signal WGMMA to zero accum_temp on next instruction
-                        tiled_mma.set(
-                            cute.nvgpu.warpgroup.Field.ACCUMULATE, False
-                        )"""
+                    
                     if warp_idx % self.num_warps_per_wg == 0:
                         mainloop_pipeline.consumer_release(mainloop_consumer_release_state)
                         mainloop_consumer_release_state.advance()
