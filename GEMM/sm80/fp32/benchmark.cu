@@ -4,10 +4,8 @@
 #include <cooperative_groups.h>
 #include <cuda/barrier>
 #include <stdio.h>
-#include <stdlib.h>
-#include <float.h>
 
-#include "kerenl_7.cu"   
+#include "kernel_7.cu"   // GEMM_tc
 
 // ── macro helpers ─────────────────────────────────────────────────────────────
 #define CDIV(M, N) (((M) + (N) - 1) / (N))
@@ -35,8 +33,8 @@
 
 
 // ── benchmark knobs ──────────────────────────────────────────────────────────
-static constexpr int WARMUP_ITERS = 10;
-static constexpr int BENCH_ITERS  = 100;
+static constexpr int WARMUP_ITERS = 2000;
+static constexpr int BENCH_ITERS  = 500;
 static constexpr int NUM_BUFFERS  = 8; // Number of distinct (A, B, C) matrix sets
 
 
@@ -110,7 +108,7 @@ static constexpr uint TC_BM      = 256;
 static constexpr uint TC_BN      = 128;
 static constexpr uint TC_BK      = 32;
 static constexpr uint TC_THREADS = 256; 
-static constexpr uint NUM_STAGES = 2;
+static constexpr uint NUM_STAGES = 3;
 static constexpr uint ACCUM_SIZE = (TC_BM * TC_BN) / TC_THREADS;
 
 
@@ -125,12 +123,21 @@ static void cublas_ref(cublasHandle_t handle,
         N, M, K, &alpha, d_B, N, d_A, K, &beta, d_C, N));
 }
 
-static void launch_tc(float *d_A, float *d_B, float *d_C,
-                      int M, int N, int K)
+
+
+static void launch_tc(float *d_A, float *d_B, float *d_C, int M, int N, int K)
 {
+    constexpr size_t SMEM = (size_t)NUM_STAGES * (TC_BM * TC_BK + TC_BK * TC_BN) * sizeof(float);
+    auto kern = GEMM_tc<TC_BM, TC_BN, TC_BK, NUM_STAGES>;
+
+    static bool configured = false;
+    if (!configured) {
+        CUDA_CHECK(cudaFuncSetAttribute(kern, cudaFuncAttributeMaxDynamicSharedMemorySize, (int)SMEM));
+        CUDA_CHECK(cudaFuncSetAttribute(kern, cudaFuncAttributePreferredSharedMemoryCarveout, 100));
+        configured = true;
+    }
     const dim3 grid(CDIV(N, TC_BN), CDIV(M, TC_BM));
-    GEMM_tc<TC_BM, TC_BN, TC_BK, TC_THREADS, ACCUM_SIZE, NUM_STAGES><<<grid, TC_THREADS>>>(
-        d_A, d_B, d_C, N, M, K);
+    kern<<<grid, TC_THREADS, SMEM>>>(d_A, d_B, d_C, N, M, K);
 }
 
 
@@ -201,28 +208,29 @@ int main() {
     CUBLAS_CHECK(cublasSetMathMode(handle, CUBLAS_TF32_TENSOR_OP_MATH));
 
     // ── correctness check on buffer 0 ─────────────────────────────────────────
+    launch_tc(d_A[0], d_B[0], d_C_k[0], M, N, K);
+    CUDA_CHECK(cudaDeviceSynchronize());
+
     cublas_ref(handle, d_A[0], d_B[0], d_C_ref[0], M, N, K);
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    launch_tc(d_A[0], d_B[0], d_C_k[0], M, N, K);
-    CUDA_CHECK(cudaDeviceSynchronize());
     diff("(kernel)", d_C_ref[0], d_C_k[0], M, N);
 
     printf("\n");
 
-    // ── benchmark cuBLAS ─────────────────────────────────────────────────────
-    auto cublas_fn = [&](int idx) { 
-        cublas_ref(handle, d_A[idx], d_B[idx], d_C_ref[idx], M, N, K); 
-    };
-    auto s_cublas = measure_circular(cublas_fn, NUM_BUFFERS);
-    report("cuBLAS", s_cublas, flops);
-
-    // ── benchmark kernel ──────────────────────────────────────────────────────
+    // ── benchmark kernel FIRST ───────────────────────────────────────────────
     auto kernel_fn = [&](int idx) { 
         launch_tc(d_A[idx], d_B[idx], d_C_k[idx], M, N, K); 
     };
     auto s_kernel = measure_circular(kernel_fn, NUM_BUFFERS);
     report("kernel", s_kernel, flops);
+
+    // ── benchmark cuBLAS SECOND ──────────────────────────────────────────────
+    auto cublas_fn = [&](int idx) { 
+        cublas_ref(handle, d_A[idx], d_B[idx], d_C_ref[idx], M, N, K); 
+    };
+    auto s_cublas = measure_circular(cublas_fn, NUM_BUFFERS);
+    report("cuBLAS", s_cublas, flops);
 
     // ── summary ───────────────────────────────────────────────────────────────
     printf("\nSpeedup vs cuBLAS (median):  kernel %.2fx\n",
