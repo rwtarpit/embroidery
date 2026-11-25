@@ -45,7 +45,7 @@ GEMM_tc(const float* __restrict__ A, const float* __restrict__ B,
     constexpr int A_STAGE = BM * BK;         // floats
     constexpr int B_STAGE = BK * BN;         // floats
 
-    // ---- grid swizzle (unchanged) ----
+    // ---- grid swizzle ----
     const int linear_id = blockIdx.y * gridDim.x + blockIdx.x;
     constexpr int SWIZZLE_W = 8;
     const int tile_col = (linear_id % SWIZZLE_W) + (linear_id / (SWIZZLE_W * gridDim.y)) * SWIZZLE_W;
